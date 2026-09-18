@@ -150,9 +150,6 @@ python app.py
   "done": false
 }
 ```
-
-Подробнее — в [docs/prompts.md](docs/prompts.md).
-
 ---
 
 ## Модели: что реально работает
