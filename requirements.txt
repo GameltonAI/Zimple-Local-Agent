@@ -1,0 +1,15 @@
+# --- Веб-сервер ---
+Flask>=3.0.0
+
+# --- Браузер (Playwright) ---
+playwright>=1.40.0
+
+# --- Рабочий стол (Windows) ---
+mss>=9.0.1
+pyautogui>=0.9.54
+uiautomation>=2.0.18
+pyperclip>=1.8.2
+Pillow>=10.0.0
+
+# --- Окно приложения (опционально) ---
+pywebview>=5.0
