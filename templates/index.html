@@ -1,0 +1,4201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
+<title>Zimple AI</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff;
+    --sidebar:#fafafa;
+    --border:#ececec;
+    --border-strong:#e2e2e5;
+    --text:#1a1a1a;
+    --muted:#8a8a8e;
+    --hover:#f2f2f4;
+    --bubble-user:#1a1a1a;
+    --bubble-ai:#f5f5f7;
+    --danger:#dc4c4c;
+    --accent:#4a7ee4;
+    --ok:#54a054;
+    --computer:#2e9e6a;
+    --ease:cubic-bezier(0.22, 1, 0.36, 1);
+    --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{
+    height:100vh;
+    height:100dvh;
+    overscroll-behavior:none;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    background:var(--bg);color:var(--text);overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    font-size:14px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button{font-family:inherit;color:inherit}
+  input,textarea,select{font-family:inherit}
+  .app{display:flex;height:100vh;height:100dvh}
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    width:264px;flex-shrink:0;
+    background:var(--sidebar);
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;
+    padding:16px 12px 12px;gap:6px;
+    overflow:hidden;
+  }
+  .brand{
+    display:flex;align-items:center;gap:9px;
+    padding:4px 10px 14px;
+    font-weight:600;font-size:15px;letter-spacing:-.01em;
+    flex-shrink:0;
+  }
+  .brand-dot{
+    width:9px;height:9px;border-radius:50%;
+    background:linear-gradient(135deg,#1a1a1a,#4a4a4a);
+    animation:pulse 2.6s var(--ease) infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1);opacity:1}
+    50%{transform:scale(1.25);opacity:.65}
+  }
+
+  .side-btn{
+    display:flex;align-items:center;gap:9px;
+    width:100%;padding:10px 12px;
+    border:1px solid var(--border-strong);background:#fff;
+    border-radius:10px;font-size:13.5px;font-weight:500;color:var(--text);
+    cursor:pointer;
+    transition:transform .14s var(--ease),background .16s,border-color .16s,box-shadow .16s;
+    flex-shrink:0;
+  }
+  .side-btn:hover{background:#f7f7f8;border-color:#d6d6da}
+  .side-btn:active{transform:scale(.975)}
+  .side-btn.ghost{border-color:transparent;background:transparent}
+  .side-btn.ghost:hover{background:var(--hover)}
+  .side-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+  .side-btn.active svg{opacity:1}
+  .side-btn svg{flex-shrink:0;opacity:.75}
+
+  .section-label{
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;
+    color:var(--muted);font-weight:600;
+    padding:16px 4px 6px 10px;
+    flex-shrink:0;
+  }
+  .section-label .mini-btn{
+    border:none;background:transparent;
+    width:22px;height:22px;border-radius:6px;
+    cursor:pointer;color:#8a8a8e;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .14s,color .14s,transform .12s var(--ease);
+  }
+  .section-label .mini-btn:hover{background:var(--hover);color:#1a1a1a}
+  .section-label .mini-btn:active{transform:scale(.88)}
+
+  .chat-list{
+    display:flex;flex-direction:column;gap:2px;
+    overflow-y:auto;overflow-x:hidden;
+    flex:1;padding-bottom:6px;
+    min-height:0;
+  }
+  .chat-item{
+    flex-shrink:0;
+    padding:8px 10px;border-radius:8px;
+    font-size:13.5px;color:#48484c;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    cursor:pointer;user-select:none;
+    min-width:0;max-width:100%;
+    line-height:1.25;
+    transition:background .14s,color .14s,transform .12s var(--ease);
+    animation:item-in .22s var(--ease) both;
+  }
+  .chat-item:hover{background:var(--hover)}
+  .chat-item:active{transform:scale(.98)}
+  .chat-item.active{background:#ececee;color:#1a1a1a;font-weight:500}
+  .chat-item .badge-mini{
+    font-size:10px;color:#a0a0a5;margin-left:6px;font-weight:500;
+  }
+  @keyframes item-in{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:none}}
+
+  .sidebar-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.35);
+    z-index:99;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .28s var(--ease);
+  }
+
+  /* ---------- MAIN ---------- */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;background:#fff}
+  .topbar{
+    padding:12px 26px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    gap:12px;min-height:56px;
+    flex-shrink:0;
+  }
+  .topbar-left{
+    display:flex;align-items:center;gap:8px;
+    min-width:0;flex:1;
+  }
+  .chat-title{
+    font-size:14px;font-weight:600;letter-spacing:-.005em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    min-width:0;
+  }
+  .chat-title .tt-project{
+    font-size:10px;color:#a0a0a5;text-transform:uppercase;letter-spacing:.06em;
+    margin-left:8px;font-weight:600;
+  }
+
+  .icon-btn{
+    width:34px;height:34px;flex-shrink:0;
+    border:1px solid transparent;border-radius:10px;
+    background:transparent;color:#7a7a7e;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .16s,color .16s,border-color .16s,transform .14s var(--ease);
+  }
+  .icon-btn:hover{background:var(--hover);color:#1a1a1a}
+  .icon-btn:active{transform:scale(.92)}
+  .icon-btn.open{background:var(--hover);color:#1a1a1a;border-color:var(--border-strong)}
+
+  .hamburger-btn{display:none}
+  .project-toggle-btn{display:none}
+
+  .body-area{
+    flex:1;display:flex;min-height:0;overflow:hidden;
+  }
+  .chat-area{
+    flex:1;display:flex;flex-direction:column;
+    min-width:0;min-height:0;
+  }
+
+  .project-side{
+    width:46%;min-width:320px;max-width:65%;
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;
+    min-height:0;background:#fcfcfd;
+  }
+  .project-side[hidden]{display:none !important}
+
+  .project-files-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .project-files-header .lbl{
+    font-size:11px;font-weight:600;letter-spacing:.06em;
+    text-transform:uppercase;color:#8a8a8e;
+  }
+  .project-files-header .actions{display:flex;gap:4px}
+  .project-mini-btn{
+    border:1px solid var(--border-strong);background:#fff;
+    padding:5px 10px;border-radius:8px;
+    font-size:12px;font-weight:500;color:#48484c;cursor:pointer;
+    display:inline-flex;align-items:center;gap:5px;
+    transition:background .14s,border-color .14s,transform .12s var(--ease);
+  }
+  .project-mini-btn:hover{background:#f7f7f8;border-color:#d6d6da}
+  .project-mini-btn:active{transform:scale(.96)}
+
+  .project-files-list{
+    max-height:170px;min-height:44px;
+    overflow-y:auto;
+    border-bottom:1px solid var(--border);
+    padding:6px;
+    flex-shrink:0;
+  }
+  .project-files-list:empty::after{
+    content:"Файлов пока нет — перетащи или загрузи";
+    display:block;
+    padding:12px 10px;
+    font-size:12px;color:#b0b0b5;text-align:center;
+  }
+  .pfile{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 8px;border-radius:6px;
+    font-size:13px;color:#48484c;
+    cursor:pointer;user-select:none;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    transition:background .14s,color .14s;
+  }
+  .pfile:hover{background:var(--hover)}
+  .pfile.active{background:#e6e6e9;color:#1a1a1a;font-weight:500}
+  .pfile .ficon{
+    width:16px;height:16px;flex-shrink:0;
+    color:#8a8a8e;
+  }
+  .pfile .fname{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+  .pfile .fsize{font-size:11px;color:#b0b0b5;flex-shrink:0}
+
+  .project-viewer{
+    flex:1;min-height:0;
+    overflow:auto;
+    background:#fff;
+    position:relative;
+  }
+  .viewer-empty{
+    padding:40px 20px;text-align:center;color:#a8a8ad;font-size:13px;
+  }
+  .viewer-image{
+    display:block;max-width:100%;
+    padding:16px;
+    margin:0 auto;
+  }
+  .viewer-note{
+    padding:16px;
+    font-size:13px;color:#8a8a8e;
+    text-align:center;
+  }
+  .code-view{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    min-height:100%;
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.55;
+    background:#fff;
+  }
+  .code-gutter{
+    position:sticky;left:0;z-index:2;
+    background:#fafafa;
+    border-right:1px solid #ececec;
+    color:#b0b0b5;
+    user-select:none;
+    text-align:right;
+    padding:12px 10px 12px 14px;
+    white-space:pre;
+  }
+  .code-body{
+    margin:0;
+    padding:12px 18px 12px 14px;
+    white-space:pre;
+    overflow:visible;
+    background:#fff;
+    color:#1a1a1a;
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.55;
+  }
+  .code-body code{
+    font-family:var(--mono);
+    font-size:12.5px;
+    line-height:1.55;
+    display:block;
+    white-space:pre;
+  }
+
+  .messages{
+    flex:1;overflow-y:auto;
+    padding:28px 26px;
+    display:flex;flex-direction:column;gap:14px;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+  }
+  .messages::-webkit-scrollbar,.chat-list::-webkit-scrollbar,
+  .blocks::-webkit-scrollbar,.project-files-list::-webkit-scrollbar,
+  .project-viewer::-webkit-scrollbar{width:8px}
+  .messages::-webkit-scrollbar-thumb,.chat-list::-webkit-scrollbar-thumb,
+  .blocks::-webkit-scrollbar-thumb,.project-files-list::-webkit-scrollbar-thumb,
+  .project-viewer::-webkit-scrollbar-thumb{
+    background:#e4e4e7;border-radius:8px;
+  }
+
+  .message{display:flex;animation:msg-in .24s var(--ease) both}
+  .message.user{justify-content:flex-end}
+  .message.assistant{flex-direction:column;align-items:flex-start}
+  @keyframes msg-in{
+    from{opacity:0;transform:translateY(10px) scale(.985)}
+    to{opacity:1;transform:none}
+  }
+  .bubble{
+    max-width:74%;padding:12px 15px;border-radius:16px;
+    font-size:14px;line-height:1.52;
+    word-wrap:break-word;min-width:0;
+  }
+  .message.user .bubble{
+    background:var(--bubble-user);color:#fff;
+    border-bottom-right-radius:6px;
+    white-space:pre-wrap;
+  }
+  .message.assistant .bubble{
+    background:var(--bubble-ai);color:var(--text);
+    border-bottom-left-radius:6px;
+  }
+  .msg-label{
+    font-size:10.5px;font-weight:600;letter-spacing:.05em;
+    text-transform:uppercase;color:#a0a0a5;
+    margin-bottom:8px;
+  }
+  .msg-content{white-space:pre-wrap;line-height:1.55}
+  .msg-content:empty{display:none}
+
+  .msg-content .word{
+    display:inline-block;
+    opacity:0;
+    animation:word-in .42s var(--ease) both;
+  }
+  @keyframes word-in{
+    from{opacity:0;transform:translateY(3px);filter:blur(1px)}
+    to{opacity:1;transform:none;filter:blur(0)}
+  }
+
+  .empty{
+    margin:auto;text-align:center;color:var(--muted);
+    animation:msg-in .45s var(--ease) both;
+    padding:20px;
+  }
+  .empty .big{
+    font-size:22px;font-weight:600;color:#1a1a1a;
+    letter-spacing:-.02em;margin-bottom:8px;
+  }
+
+  @keyframes block-in{
+    from{opacity:0;transform:translateY(8px) scale(.98)}
+    to{opacity:1;transform:none}
+  }
+
+  .agent-working{
+    display:none;align-items:center;gap:8px;
+    padding:6px 2px;font-size:12px;color:#a0a0a5;letter-spacing:.02em;
+  }
+  .agent-working.visible{
+    display:flex;animation:block-in .25s var(--ease) both;
+  }
+  .aw-dots{display:flex;gap:3px}
+  .aw-dots span{
+    width:4px;height:4px;border-radius:50%;
+    background:#b0b0b5;
+    animation:tdot 1.3s infinite ease-in-out;
+  }
+  .aw-dots span:nth-child(2){animation-delay:.18s}
+  .aw-dots span:nth-child(3){animation-delay:.36s}
+  @keyframes tdot{
+    0%,60%,100%{opacity:.35;transform:translateY(0)}
+    30%{opacity:1;transform:translateY(-3px)}
+  }
+
+  .msg-actions{
+    display:flex;gap:2px;
+    margin:6px 0 0 4px;
+    animation:actions-in .3s var(--ease) both;
+    animation-delay:.08s;
+  }
+  @keyframes actions-in{
+    from{opacity:0;transform:translateY(4px)}
+    to{opacity:1;transform:none}
+  }
+  .action-btn{
+    width:32px;height:32px;
+    border:none;background:transparent;
+    border-radius:8px;
+    color:#b0b0b5;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .16s,color .16s,transform .14s var(--ease);
+  }
+  .action-btn:hover{background:#ececee;color:#1a1a1a}
+  .action-btn:active{transform:scale(.88)}
+  .action-btn.like.active{background:#e4e4e7;color:#1a1a1a}
+  .action-btn.dislike.active{background:#fbeaea;color:var(--danger)}
+  .action-btn.regen svg{transition:transform .5s var(--ease)}
+  .action-btn.regen.spinning svg{animation:regen-spin .55s var(--ease)}
+  @keyframes regen-spin{
+    from{transform:rotate(0deg)}
+    to{transform:rotate(360deg)}
+  }
+
+  .agent-steps{display:flex;flex-direction:column;gap:6px}
+  .agent-steps:empty{display:none}
+
+  .reasoning-block{
+    margin:2px 0 4px;
+    border-left:2px solid #e3e3e7;
+    padding-left:12px;
+    animation:block-in .28s var(--ease) both;
+  }
+  .reasoning-head{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:3px 4px 3px 0;
+    background:none;border:none;
+    font-family:inherit;
+    font-size:11px;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;
+    color:#a4a4a9;cursor:pointer;
+    transition:color .15s;
+  }
+  .reasoning-head:hover{color:#5a5a5e}
+  .reasoning-head .chev{
+    width:9px;height:9px;flex-shrink:0;
+    transition:transform .28s var(--ease);
+    transform-origin:50% 50%;
+  }
+  .reasoning-block.open .reasoning-head .chev{transform:rotate(90deg)}
+  .reasoning-body{
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows .3s var(--ease);
+  }
+  .reasoning-block.open .reasoning-body{grid-template-rows:1fr}
+  .reasoning-clip{overflow:hidden;min-height:0}
+  .reasoning-text{
+    padding:4px 0;
+    color:#9a9a9e;font-style:italic;
+    font-size:13px;line-height:1.6;
+    white-space:pre-wrap;
+  }
+
+  /* chips: status / browser / project / computer — общий стиль */
+  .status-chip, .browser-chip, .project-chip, .computer-chip{
+    display:flex;align-items:center;gap:8px;
+    width:fit-content;max-width:100%;
+    padding:5px 12px 5px 6px;
+    background:#ffffff;
+    border:1px solid #e6e6ea;
+    border-radius:999px;
+    font-size:12.5px;font-weight:500;color:#2e2e32;
+    box-shadow:0 1px 0 rgba(0,0,0,.02);
+    animation:chip-in .28s var(--ease) both;
+  }
+  .status-chip .status-mark,
+  .browser-chip .browser-mark,
+  .project-chip .project-mark,
+  .computer-chip .computer-mark{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:16px;height:16px;flex-shrink:0;
+    border-radius:50%;
+    background:#1a1a1a;color:#fff;
+  }
+  .status-chip .status-mark.fail{background:var(--danger)}
+  .browser-chip .browser-mark{background:var(--accent)}
+  .project-chip .project-mark{background:#7a5af0}
+  .computer-chip .computer-mark{background:var(--computer)}
+  .browser-chip.running .browser-mark,
+  .project-chip.running .project-mark,
+  .computer-chip.running .computer-mark{animation:bpulse 1.4s ease-in-out infinite}
+  .browser-chip.fail .browser-mark,
+  .project-chip.fail .project-mark,
+  .computer-chip.fail .computer-mark{background:var(--danger)}
+  .browser-chip.done .browser-mark,
+  .project-chip.done .project-mark,
+  .computer-chip.done .computer-mark{background:var(--ok)}
+  @keyframes bpulse{
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.5;transform:scale(1.15)}
+  }
+  .status-chip .status-text,
+  .browser-chip .status-text,
+  .project-chip .status-text,
+  .computer-chip .status-text{
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .project-chip .path{
+    font-family:var(--mono);font-size:11.5px;color:#5a5a5e;
+    margin-left:2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  @keyframes chip-in{
+    from{opacity:0;transform:translateY(4px) scale(.95)}
+    to{opacity:1;transform:none}
+  }
+
+  .agent-screen{
+    display:none;
+    margin-top:8px;
+    border-radius:12px;
+    overflow:hidden;
+    background:#f0f0f2;
+    border:1px solid #e6e6ea;
+    position:relative;
+    min-width:240px;
+  }
+  .agent-screen.visible{display:block}
+  .agent-screen.visible.loading{
+    display:flex;align-items:center;justify-content:center;
+    min-height:120px;
+  }
+  .agent-screen.visible.loading::after{
+    content:"";
+    width:20px;height:20px;
+    border:2px solid #ddd;
+    border-top-color:#666;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  .agent-screen img{
+    display:block;width:100%;max-height:420px;object-fit:contain;
+    animation:screen-in .35s var(--ease) both;
+  }
+  @keyframes screen-in{
+    from{opacity:0;transform:scale(.995)}
+    to{opacity:1;transform:none}
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .media-block{
+    margin:4px 0 0;
+    border-radius:12px;overflow:hidden;
+    max-width:100%;background:#ececee;
+    animation:block-in .3s var(--ease) both;
+  }
+  .media-block img,
+  .media-block video{
+    display:block;max-width:100%;max-height:380px;border-radius:12px;
+  }
+  .media-block video{background:#000}
+
+  /* ---------- COMPOSER ---------- */
+  .composer{padding:12px 26px 20px;border-top:1px solid var(--border);flex-shrink:0}
+  .composer-row{
+    display:flex;align-items:center;gap:8px;margin-bottom:9px;
+    flex-wrap:wrap;
+  }
+
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 12px;border-radius:999px;
+    border:1px solid var(--border-strong);background:#fff;
+    font-size:12.5px;font-weight:500;color:#48484c;cursor:pointer;
+    transition:background .16s,border-color .16s,transform .14s var(--ease);
+  }
+  .pill:hover{background:#f7f7f8;border-color:#d6d6da}
+  .pill:active{transform:scale(.955)}
+  .pill .caret{transition:transform .2s var(--ease)}
+  .pill.open .caret{transform:rotate(180deg)}
+  .pill.small{padding:5px 10px;font-size:12px}
+  .pill.small svg{opacity:.7}
+  .pill.danger{border-color:#f2c4c4;color:var(--danger)}
+  .pill.danger:hover{background:#fbeaea;border-color:#e7a9a9}
+
+  .menu-wrap{position:relative}
+  .menu{
+    position:absolute;bottom:calc(100% + 8px);left:0;
+    background:#fff;border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 12px 32px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.04);
+    padding:6px;min-width:220px;z-index:30;
+    opacity:0;transform:translateY(6px) scale(.96);
+    pointer-events:none;transform-origin:bottom left;
+    transition:opacity .16s var(--ease),transform .16s var(--ease);
+  }
+  .menu.open{opacity:1;transform:none;pointer-events:auto}
+  .menu.down{
+    bottom:auto;top:calc(100% + 8px);
+    transform-origin:top right;
+    transform:translateY(-6px) scale(.96);
+  }
+  .menu.down.open{transform:none}
+  .menu.align-right{left:auto;right:0}
+
+  .menu-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 10px;border-radius:8px;font-size:13.5px;
+    cursor:pointer;transition:background .12s;color:#2a2a2e;
+  }
+  .menu-item:hover{background:var(--hover)}
+  .menu-item.active{background:#f0f0f2;font-weight:600}
+  .menu-item.disabled{cursor:default;color:#a5a5aa}
+  .menu-item.disabled:hover{background:transparent}
+  .menu-item .check{opacity:0;transition:opacity .16s;color:#1a1a1a}
+  .menu-item.active .check{opacity:1}
+  .badge{
+    font-size:10px;font-weight:600;letter-spacing:.04em;
+    text-transform:uppercase;color:#9a9a9e;
+    background:#f3f3f5;padding:2px 7px;border-radius:6px;
+  }
+  .menu-section-label{
+    font-size:10px;font-weight:600;text-transform:uppercase;
+    letter-spacing:.07em;color:#a5a5aa;
+    padding:6px 10px 4px;
+  }
+  .menu-sep{height:1px;background:var(--border);margin:6px 4px}
+
+  .attachments-row{
+    display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;
+  }
+  .attachments-row:empty{display:none}
+  .attachment-thumb{
+    position:relative;
+    width:64px;height:64px;
+    border-radius:10px;overflow:hidden;
+    background:#f0f0f2;
+    animation:block-in .24s var(--ease) both;
+  }
+  .attachment-thumb img,
+  .attachment-thumb video{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  .attachment-thumb .remove-mini{
+    position:absolute;top:4px;right:4px;
+    width:20px;height:20px;border-radius:50%;
+    background:rgba(0,0,0,.6);color:#fff;border:none;
+    cursor:pointer;font-size:13px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .14s,transform .12s var(--ease);
+  }
+  .attachment-thumb .remove-mini:hover{background:rgba(0,0,0,.85)}
+  .attachment-thumb .remove-mini:active{transform:scale(.88)}
+
+  .input-row{
+    display:flex;align-items:flex-end;gap:8px;
+    background:#fff;border:1px solid var(--border-strong);
+    border-radius:16px;padding:8px 8px 8px 16px;
+    transition:border-color .18s,box-shadow .18s;
+  }
+  .input-row:focus-within{
+    border-color:#c9c9cd;
+    box-shadow:0 0 0 4px rgba(0,0,0,.03);
+  }
+  textarea{
+    flex:1;border:none;outline:none;resize:none;background:transparent;
+    font-family:inherit;font-size:14px;line-height:1.5;
+    padding:8px 0;max-height:160px;color:var(--text);
+  }
+  textarea::placeholder{color:#a8a8ad}
+
+  .send-btn{
+    width:36px;height:36px;flex-shrink:0;
+    border-radius:11px;border:none;background:#1a1a1a;color:#fff;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:transform .14s var(--ease),background .16s,opacity .16s;
+  }
+  .send-btn:hover{background:#000}
+  .send-btn:active{transform:scale(.9)}
+  .send-btn:disabled{opacity:.3;cursor:default;transform:none}
+
+  .styler-row{
+    display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;
+    animation:styler-in .22s var(--ease) both;
+  }
+  .styler-row.hidden{display:none}
+  @keyframes styler-in{
+    from{opacity:0;transform:translateY(6px)}
+    to{opacity:1;transform:none}
+  }
+
+  .blocks{
+    display:flex;flex-direction:column;gap:6px;
+    max-height:260px;overflow-y:auto;
+  }
+  .blocks:not(:empty){margin-bottom:9px}
+  .block{
+    display:flex;gap:8px;align-items:flex-start;
+    animation:block-in .24s var(--ease) both;
+  }
+  .block textarea,
+  .block input[type="text"],
+  .block input[type="url"],
+  .block input[type="number"]{
+    flex:1;border:1px solid var(--border-strong);border-radius:11px;
+    padding:9px 12px;font-family:inherit;font-size:13px;
+    outline:none;resize:none;background:#fcfcfd;color:#8a8a8e;
+    line-height:1.45;
+    transition:border-color .16s,background .16s,box-shadow .16s;
+  }
+  .block textarea:focus,
+  .block input[type="text"]:focus,
+  .block input[type="url"]:focus,
+  .block input[type="number"]:focus{
+    border-color:#c9c9cd;background:#fff;
+    box-shadow:0 0 0 4px rgba(0,0,0,.03);
+  }
+  .block textarea::placeholder,
+  .block input::placeholder{color:#b4b4b9}
+  .block.reasoning textarea{
+    font-style:italic;min-height:52px;color:#8a8a8e;
+    border-left:2px solid #e3e3e7;
+  }
+  .block.status input[type="text"]{color:#2e2e32;font-weight:500}
+
+  .block.status .status-toggle{
+    width:22px;height:22px;flex-shrink:0;
+    margin-top:7px;border-radius:50%;border:none;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:#fff;
+    transition:background .16s, transform .14s var(--ease);
+  }
+  .block.status .status-toggle.ok{background:#1a1a1a}
+  .block.status .status-toggle.fail{background:var(--danger)}
+  .block.status .status-toggle:active{transform:scale(.88)}
+
+  .block.browser,
+  .block.computer{
+    flex-direction:column;align-items:stretch;
+    border:1px solid var(--border-strong);border-radius:11px;
+    padding:8px;background:#fcfcfd;gap:6px;
+  }
+  .block.browser .browser-row,
+  .block.computer .browser-row{display:flex;gap:8px;align-items:center}
+  .block.browser select,
+  .block.computer select{
+    border:1px solid var(--border-strong);border-radius:8px;
+    padding:6px 8px;background:#fff;font-size:12.5px;
+    outline:none;font-family:inherit;
+  }
+  .block.browser .remove,
+  .block.computer .remove{margin-top:0}
+
+  .block.media{align-items:center}
+  .block.media .media-thumb{
+    width:56px;height:56px;border-radius:10px;
+    overflow:hidden;flex-shrink:0;
+    background:#f0f0f2;border:1px solid var(--border-strong);
+  }
+  .block.media .media-thumb img,
+  .block.media .media-thumb video{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  .block.media .media-info{flex:1;min-width:0}
+  .block.media .media-name{
+    font-size:12.5px;color:#48484c;font-weight:500;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .block.media .media-kind{
+    font-size:11px;color:#a0a0a5;margin-top:2px;
+  }
+
+  .delay-wrap{
+    display:flex;align-items:center;gap:3px;
+    margin-top:7px;flex-shrink:0;
+  }
+  .block.media .delay-wrap,
+  .block.browser .delay-wrap,
+  .block.computer .delay-wrap{margin-top:0}
+  .delay-wrap input{
+    width:46px;padding:5px 4px;
+    border:1px solid var(--border-strong);border-radius:8px;
+    font-family:inherit;font-size:12px;text-align:center;
+    background:#fcfcfd;color:#48484c;outline:none;
+    transition:border-color .16s,background .16s;
+    -moz-appearance:textfield;
+  }
+  .delay-wrap input::-webkit-outer-spin-button,
+  .delay-wrap input::-webkit-inner-spin-button{
+    -webkit-appearance:none;margin:0;
+  }
+  .delay-wrap input:focus{border-color:#c9c9cd;background:#fff}
+  .delay-wrap span{font-size:11px;color:#a0a0a5}
+
+  .block .remove{
+    width:28px;height:28px;flex-shrink:0;
+    border:none;background:transparent;border-radius:8px;
+    cursor:pointer;color:#b0b0b5;font-size:16px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:5px;
+    transition:background .14s,color .14s,transform .12s var(--ease);
+  }
+  .block.media .remove{margin-top:0}
+  .block .remove:hover{background:#f2f2f4;color:#1a1a1a}
+  .block .remove:active{transform:scale(.88)}
+
+  .project-side.dragover{
+    background:#f2f5ff;
+    outline:2px dashed var(--accent);
+    outline-offset:-8px;
+  }
+
+  /* индикатор «ПК включён» */
+  .pc-on-indicator{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:11px;font-weight:600;color:var(--computer);
+    padding:3px 8px;border-radius:999px;
+    background:#e8f6ee;border:1px solid #c7e6d4;
+  }
+  .pc-on-indicator .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--computer);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+
+
+  /* ---------- BRAND ---------- */
+  .brand{gap:8px}
+  .brand-name{display:inline-flex}
+  .brand-name .bl{
+    display:inline-block;
+    opacity:0;
+    animation:brand-letter .62s var(--ease) both;
+  }
+  @keyframes brand-letter{
+    0%{opacity:0;transform:translateY(10px) rotate(-12deg) scale(.7);filter:blur(4px)}
+    60%{opacity:1;transform:translateY(-2px) rotate(2deg) scale(1.06);filter:blur(0)}
+    100%{opacity:1;transform:none}
+  }
+  .brand-ai{
+    font-weight:700;
+    background:linear-gradient(100deg,#2f7fe8 0%,#7fc4ff 25%,#bfe4ff 45%,#4aa3f0 65%,#2f7fe8 100%);
+    background-size:300% 100%;
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;
+    animation:ai-flow 3.6s linear infinite, ai-pop .5s var(--ease) both;
+    animation-delay:0s, .5s;
+  }
+  @keyframes ai-flow{
+    0%{background-position:0% 50%}
+    100%{background-position:300% 50%}
+  }
+  @keyframes ai-pop{
+    from{opacity:0;transform:translateX(-6px) scale(.8)}
+    to{opacity:1;transform:none}
+  }
+
+  /* ---------- SHINE «работаю» ---------- */
+  .aw-text{
+    background:linear-gradient(100deg,#c2c2c8 0%,#c2c2c8 35%,#f4f4f6 50%,#c2c2c8 65%,#c2c2c8 100%);
+    background-size:220% 100%;
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;
+    animation:shine 1.9s linear infinite;
+    font-weight:500;
+  }
+  @keyframes shine{
+    from{background-position:120% 50%}
+    to{background-position:-40% 50%}
+  }
+
+  /* ---------- SIDEBAR CHATS ---------- */
+  .chat-item{
+    display:flex;align-items:center;gap:6px;
+    position:relative;
+  }
+  .chat-item .ci-main{
+    display:flex;align-items:center;gap:6px;
+    min-width:0;flex:1;overflow:hidden;
+  }
+  .chat-item .ci-title{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;
+  }
+  .chat-item .ci-pin{
+    flex-shrink:0;color:#9a9a9e;display:flex;
+  }
+  .chat-label{
+    flex-shrink:0;
+    font-size:9.5px;font-weight:700;letter-spacing:.03em;
+    text-transform:uppercase;
+    padding:2px 6px;border-radius:5px;
+    background:#e8eefc;color:#3a63b8;
+    max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    animation:block-in .22s var(--ease) both;
+  }
+  .chat-item .ci-menu{
+    flex-shrink:0;
+    width:22px;height:22px;border:none;background:transparent;
+    border-radius:6px;color:#a0a0a5;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transition:opacity .14s,background .14s,color .14s,transform .12s var(--ease);
+  }
+  .chat-item:hover .ci-menu,.chat-item.active .ci-menu,.chat-item .ci-menu.open{opacity:1}
+  .chat-item .ci-menu:hover{background:#e2e2e6;color:#1a1a1a}
+  .chat-item .ci-menu:active{transform:scale(.88)}
+
+  .ctx-menu{
+    position:fixed;z-index:200;
+    background:#fff;border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 14px 40px rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.05);
+    padding:6px;min-width:208px;
+    opacity:0;transform:translateY(-6px) scale(.96);
+    transform-origin:top left;
+    transition:opacity .16s var(--ease),transform .16s var(--ease);
+    pointer-events:none;
+    max-height:70vh;overflow:auto;
+  }
+  .ctx-menu.open{opacity:1;transform:none;pointer-events:auto}
+  .ctx-menu .menu-item.danger{color:var(--danger)}
+  .ctx-menu .menu-item.danger:hover{background:#fbeaea}
+  .ctx-menu .dot-color{
+    width:8px;height:8px;border-radius:50%;background:#3a63b8;flex-shrink:0;
+  }
+  .ctx-menu .menu-item .left{display:flex;align-items:center;gap:8px;min-width:0}
+
+  /* ---------- MARKDOWN ---------- */
+  .msg-content.md{white-space:normal}
+  .msg-content.md > *:first-child{margin-top:0}
+  .msg-content.md > *:last-child{margin-bottom:0}
+  .msg-content.md p{margin:0 0 8px;line-height:1.55}
+  .msg-content.md h1,.msg-content.md h2,.msg-content.md h3{
+    margin:12px 0 6px;line-height:1.3;letter-spacing:-.01em;font-weight:650;
+  }
+  .msg-content.md h1{font-size:18px}
+  .msg-content.md h2{font-size:16px}
+  .msg-content.md h3{font-size:14.5px}
+  .msg-content.md ul,.msg-content.md ol{margin:0 0 8px;padding-left:20px}
+  .msg-content.md li{margin:2px 0;line-height:1.5}
+  .msg-content.md blockquote{
+    margin:0 0 8px;padding:4px 12px;
+    border-left:3px solid #d8d8dd;color:#5a5a5f;
+  }
+  .msg-content.md code.inline{
+    font-family:var(--mono);font-size:.88em;
+    background:rgba(0,0,0,.055);padding:1.5px 5px;border-radius:5px;
+  }
+  .message.user .msg-content.md code.inline{background:rgba(255,255,255,.18)}
+  .msg-content.md hr{border:none;border-top:1px solid var(--border-strong);margin:10px 0}
+  .msg-content.md a{color:var(--accent);text-decoration:underline}
+  .msg-content.md strong{font-weight:650}
+  .msg-content.md table{border-collapse:collapse;margin:0 0 8px;font-size:13px;display:block;overflow-x:auto}
+  .msg-content.md th,.msg-content.md td{border:1px solid var(--border-strong);padding:5px 9px;text-align:left}
+  .msg-content.md th{background:#f0f0f2;font-weight:600}
+
+  .code-card{
+    margin:0 0 9px;border:1px solid var(--border-strong);
+    border-radius:10px;overflow:hidden;background:#fbfbfc;
+    animation:block-in .24s var(--ease) both;
+  }
+  .code-card .cc-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:5px 8px 5px 11px;
+    background:#f3f3f5;border-bottom:1px solid var(--border);
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+    color:#8a8a8e;font-weight:600;
+  }
+  .code-card pre{
+    margin:0;padding:11px 13px;overflow-x:auto;
+    font-family:var(--mono);font-size:12.5px;line-height:1.55;
+  }
+  .code-card code{font-family:var(--mono);background:none;padding:0}
+  .cc-copy{
+    border:none;background:transparent;cursor:pointer;
+    font-size:11px;color:#8a8a8e;padding:3px 7px;border-radius:6px;
+    text-transform:none;letter-spacing:0;font-weight:500;
+    transition:background .14s,color .14s;
+  }
+  .cc-copy:hover{background:#e6e6e9;color:#1a1a1a}
+  .cc-copy.done{color:var(--ok)}
+
+  .action-btn.copy.done{color:var(--ok);background:#eaf6ea}
+  .action-btn.copy svg{transition:transform .2s var(--ease)}
+  .action-btn.copy.done svg{transform:scale(1.12)}
+
+  /* индикатор ПК внутри меню чата */
+  .menu-item .pc-dot{
+    width:7px;height:7px;border-radius:50%;flex-shrink:0;
+    background:#c9c9ce;transition:background .2s;
+  }
+  .menu-item .pc-dot.on{
+    background:var(--computer);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  .menu-item .pc-state{font-size:11px;color:#a0a0a5;font-weight:600}
+  .menu-item .pc-state.on{color:var(--computer)}
+
+
+  /* ---------- MIC / STOP ---------- */
+  .mic-btn{
+    width:38px;height:38px;flex-shrink:0;
+    border:1px solid var(--border-strong);border-radius:12px;
+    background:#fff;color:#7a7a7e;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .16s,color .16s,border-color .16s,transform .14s var(--ease),box-shadow .2s;
+  }
+  .mic-btn:hover{background:#f7f7f8;color:#1a1a1a}
+  .mic-btn:active{transform:scale(.92)}
+  .mic-btn.listening{
+    background:#fdeaea;border-color:#f0bcbc;color:var(--danger);
+    box-shadow:0 0 0 0 rgba(220,76,76,.45);
+    animation:mic-pulse 1.4s infinite;
+  }
+  .mic-btn.unsupported{opacity:.4;cursor:not-allowed}
+  @keyframes mic-pulse{
+    0%{box-shadow:0 0 0 0 rgba(220,76,76,.40)}
+    70%{box-shadow:0 0 0 10px rgba(220,76,76,0)}
+    100%{box-shadow:0 0 0 0 rgba(220,76,76,0)}
+  }
+
+  .send-btn.stop{background:var(--danger)}
+  .send-btn.stop:hover{background:#c73f3f}
+
+  .voice-hint{
+    font-size:11px;color:var(--danger);font-weight:600;
+    padding:2px 0 4px;letter-spacing:.02em;
+    animation:block-in .2s var(--ease) both;
+  }
+
+  /* ---------- MODAL ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:300;
+    background:rgba(0,0,0,.35);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+    opacity:0;transition:opacity .22s var(--ease);
+  }
+  .modal-overlay.open{opacity:1}
+  .modal-overlay[hidden]{display:none}
+  .modal{
+    width:min(620px,100%);max-height:80vh;
+    background:#fff;border-radius:16px;
+    border:1px solid var(--border);
+    box-shadow:0 24px 60px rgba(0,0,0,.18);
+    display:flex;flex-direction:column;
+    padding:14px 16px 14px;
+    transform:translateY(12px) scale(.98);
+    transition:transform .24s var(--ease);
+  }
+  .modal-overlay.open .modal{transform:none}
+  .modal-head{
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:15px;font-weight:600;margin-bottom:4px;
+  }
+  .modal-hint{font-size:11px;color:#a0a0a5;margin-bottom:10px;word-break:break-all}
+  .modal textarea{
+    flex:1;min-height:240px;resize:vertical;
+    border:1px solid var(--border-strong);border-radius:10px;
+    padding:10px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.55;
+    outline:none;background:#fcfcfd;color:#1a1a1a;
+    transition:border-color .16s,background .16s;
+  }
+  .modal textarea:focus{border-color:#c9c9cd;background:#fff}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+  .pill.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+  .pill.primary:hover{background:#000}
+
+  .empty .big .brand-ai{font-size:inherit}
+
+  @media (max-width: 900px) {
+    body { font-size: 15px; }
+
+    .sidebar{
+      position:fixed;
+      top:0;left:0;
+      height:100vh;height:100dvh;
+      width:280px;max-width:82vw;
+      z-index:100;
+      transform:translateX(-105%);
+      transition:transform .3s var(--ease);
+      box-shadow:0 0 40px rgba(0,0,0,.12);
+      padding-top:max(16px, env(safe-area-inset-top));
+    }
+    .sidebar.open{transform:translateX(0)}
+    .sidebar-overlay{display:block}
+    .sidebar-overlay.open{opacity:1;pointer-events:auto}
+
+    .topbar{
+      padding:10px 14px;
+      padding-top:max(10px, env(safe-area-inset-top));
+      min-height:54px;gap:8px;
+    }
+    .hamburger-btn{display:flex}
+    .project-toggle-btn{display:flex}
+
+    .messages{padding:16px 12px;gap:12px}
+    .bubble{max-width:92%;font-size:15px;line-height:1.5;padding:10px 13px;border-radius:14px}
+
+    .action-btn{width:36px;height:36px}
+    .msg-actions{margin-left:0}
+
+    .agent-screen img{max-height:55vh}
+    .media-block img,.media-block video{max-height:55vh}
+
+    .composer{padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+    .composer-row{
+      gap:6px;margin-bottom:6px;flex-wrap:nowrap;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      scrollbar-width:none;padding-bottom:2px;
+    }
+    .composer-row::-webkit-scrollbar{display:none}
+    .composer-row > *{flex-shrink:0}
+    .pill{font-size:12px;padding:7px 11px;min-height:34px}
+    .pill.small{padding:6px 10px;font-size:11.5px;min-height:30px}
+
+    .styler-row{
+      flex-wrap:nowrap;overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;margin-bottom:6px;padding-bottom:2px;
+    }
+    .styler-row::-webkit-scrollbar{display:none}
+    .styler-row > *{flex-shrink:0}
+
+    textarea{font-size:16px;padding:8px 0;max-height:130px}
+    input[type="text"],input[type="url"],input[type="number"]{font-size:16px}
+
+    .send-btn{width:40px;height:40px;border-radius:12px}
+    .mic-btn{width:40px;height:40px;border-radius:12px}
+    .modal{padding:12px;max-height:88vh}
+    .modal textarea{min-height:180px;font-size:13px}
+
+    .menu{min-width:200px;max-width:calc(100vw - 20px)}
+    .menu.down{right:0;left:auto}
+    .menu-item{padding:11px 12px;font-size:14px}
+
+    .blocks{max-height:40vh}
+    .block.status .status-toggle{width:28px;height:28px;margin-top:5px}
+    .block .remove{width:34px;height:34px;font-size:18px}
+    .block textarea,.block input[type="text"],.block input[type="url"]{font-size:14px}
+    .delay-wrap input{font-size:13px;width:50px;padding:6px 4px}
+    .agent-screen{min-width:0;margin-top:6px}
+    .sidebar-overlay{position:fixed}
+
+    .project-side{
+      position:fixed;
+      top:0;left:0;
+      width:100%;height:100vh;height:100dvh;
+      max-width:100%;min-width:0;
+      z-index:98;
+      transform:translateX(-105%);
+      transition:transform .3s var(--ease);
+      padding-top:max(0px, env(safe-area-inset-top));
+      box-shadow:0 0 40px rgba(0,0,0,.12);
+    }
+    .project-side.mobile-open{transform:translateX(0)}
+    .project-side[hidden]{display:flex !important}
+
+    .main:not(.has-project) .project-side{transform:translateX(-105%)}
+
+    .project-files-list{max-height:120px}
+  }
+
+  @media (max-width: 480px) {
+    .bubble{max-width:96%}
+    .chat-title{font-size:13.5px}
+    .topbar{padding:8px 10px;padding-top:max(8px, env(safe-area-inset-top))}
+    .messages{padding:12px 8px}
+    .composer{padding:6px 8px calc(8px + env(safe-area-inset-bottom))}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-dot"></div><span class="brand-name" id="brand-name">Zimple</span><span class="brand-ai">AI</span></div>
+
+    <button class="side-btn" id="new-chat">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <path d="M7 2v10M2 7h10"/>
+      </svg>
+      Новый чат
+    </button>
+
+    <button class="side-btn ghost" id="projects-btn">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"
+           stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+        <path d="M1.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-7.5z"/>
+      </svg>
+      Проекты
+    </button>
+
+    <div class="section-label" id="section-label">
+      <span id="section-label-text">Чаты</span>
+      <button class="mini-btn" id="section-add-btn" title="Создать" hidden>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M7 2v10M2 7h10"/>
+        </svg>
+      </button>
+    </div>
+    <div class="chat-list" id="chat-list"></div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <main class="main" id="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn hamburger-btn" id="hamburger-btn" title="Меню" aria-label="Меню">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M3 5h12M3 9h12M3 13h12"/>
+          </svg>
+        </button>
+        <button class="icon-btn project-toggle-btn" id="project-toggle-btn"
+                title="Файлы проекта" aria-label="Файлы проекта" hidden>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+               stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+            <path d="M1.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-7.5z"/>
+          </svg>
+        </button>
+        <div class="chat-title" id="chat-title">Новый чат</div>
+      </div>
+
+      <div class="menu-wrap">
+        <button class="icon-btn" id="chat-menu-btn" title="Меню чата">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="3" cy="8" r="1.5"/>
+            <circle cx="8" cy="8" r="1.5"/>
+            <circle cx="13" cy="8" r="1.5"/>
+          </svg>
+        </button>
+        <div class="menu down align-right" id="chat-menu">
+          <div class="menu-section-label">Режим</div>
+          <div class="menu-item mode-option" data-mode="manual">
+            <span>Ручной</span>
+            <svg class="check" width="12" height="12" viewBox="0 0 12 12" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 6.5l2.8 2.8L10 3.5"/>
+            </svg>
+          </div>
+          <div class="menu-item mode-option" data-mode="ai">
+            <span>ИИ (LM Studio)</span>
+            <svg class="check" width="12" height="12" viewBox="0 0 12 12" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 6.5l2.8 2.8L10 3.5"/>
+            </svg>
+          </div>
+
+          <div class="menu-sep"></div>
+
+          <div class="role-section">
+            <div class="menu-section-label">Отвечать как</div>
+            <div class="menu-item role-option active" data-role="user">
+              <span>Я</span>
+              <svg class="check" width="12" height="12" viewBox="0 0 12 12" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 6.5l2.8 2.8L10 3.5"/>
+              </svg>
+            </div>
+            <div class="menu-item role-option" data-role="assistant">
+              <span>Модель (вручную)</span>
+              <svg class="check" width="12" height="12" viewBox="0 0 12 12" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 6.5l2.8 2.8L10 3.5"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="menu-sep"></div>
+
+          <div class="menu-item" id="toggle-computer-btn">
+            <span class="left"><span class="pc-dot" id="pc-dot"></span>
+              <span id="toggle-computer-label">Управление ПК</span></span>
+            <span class="pc-state" id="pc-state">выкл</span>
+          </div>
+
+          <div class="menu-item" id="memory-btn">
+            <span class="left">Память ИИ</span>
+          </div>
+
+          <div class="menu-item" id="close-browser-btn">
+            <span>Закрыть браузер</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="body-area">
+      <aside class="project-side" id="project-side" hidden>
+        <div class="project-files-header">
+          <span class="lbl">Файлы</span>
+          <div class="actions">
+            <button class="project-mini-btn" id="project-upload-btn" title="Загрузить файлы">
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M7 2v10M2 7h10"/>
+              </svg>
+              Файл
+            </button>
+          </div>
+        </div>
+        <div class="project-files-list" id="project-files-list"></div>
+        <div class="project-viewer" id="project-viewer">
+          <div class="viewer-empty">Выбери файл, чтобы посмотреть содержимое</div>
+        </div>
+      </aside>
+
+      <section class="chat-area">
+        <div class="messages" id="messages"></div>
+
+        <div class="composer">
+          <div class="composer-row">
+            <div class="menu-wrap">
+              <button class="pill" id="tools-btn">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+                     stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 1.5l1.6 3.6 3.9.4-2.9 2.7.8 3.9L8 10.2l-3.4 1.9.8-3.9L2.5 5.5l3.9-.4L8 1.5z"/>
+                </svg>
+                Инструменты
+              </button>
+              <div class="menu" id="tools-menu">
+                <div class="menu-item disabled">Веб-поиск <span class="badge">скоро</span></div>
+                <div class="menu-item disabled">Генерация кода <span class="badge">скоро</span></div>
+                <div class="menu-item disabled">Изображения <span class="badge">скоро</span></div>
+                <div class="menu-item disabled">Файлы <span class="badge">скоро</span></div>
+              </div>
+            </div>
+
+            <div class="menu-wrap">
+              <button class="pill" id="model-btn">
+                <span id="model-name">Zimple-v2</span>
+                <svg class="caret" width="10" height="10" viewBox="0 0 10 10" fill="none"
+                     stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2.5 4L5 6.5L7.5 4"/>
+                </svg>
+              </button>
+              <div class="menu" id="model-menu"></div>
+            </div>
+
+            <button class="pill" id="attach-btn" title="Прикрепить файл">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+                   stroke="currentColor" stroke-width="1.5"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 6.5l-4.2 4.2a2.2 2.2 0 0 1-3.1-3.1l5-5a3.3 3.3 0 0 1 4.7 4.7l-5 5"/>
+              </svg>
+              Файл
+            </button>
+
+          </div>
+
+          <div class="attachments-row" id="attachments-row"></div>
+
+          <div class="styler-row hidden" id="styler-row">
+            <button class="pill small" id="add-reasoning">+ Reasoning</button>
+            <button class="pill small" id="add-status">+ Статус</button>
+            <button class="pill small" id="add-status-image">+ Ген. изображения</button>
+            <button class="pill small" id="add-status-video">+ Ген. видео</button>
+            <button class="pill small" id="add-image">+ Фото</button>
+            <button class="pill small" id="add-video">+ Видео</button>
+            <button class="pill small" id="add-browser">+ Браузер</button>
+            <button class="pill small" id="add-computer">+ ПК</button>
+          </div>
+
+          <div class="blocks" id="blocks"></div>
+
+          <div class="input-row">
+            <textarea id="input" rows="1" placeholder="Написать сообщение..." enterkeyhint="send"></textarea>
+            <button class="mic-btn" id="mic-btn" title="Удерживай и говори" aria-label="Голосовой ввод">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.8"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="2.5" width="6" height="11" rx="3"/>
+                <path d="M5.5 11a6.5 6.5 0 0 0 13 0"/>
+                <path d="M12 17.5V21M9 21h6"/>
+              </svg>
+            </button>
+            <button class="send-btn" id="send-btn" title="Отправить">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                   stroke="currentColor" stroke-width="1.9"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 13V3M3.5 7.5L8 3l4.5 4.5"/>
+              </svg>
+            </button>
+          </div>
+
+          <input type="file" id="user-attach-input" accept="image/*,video/*" multiple hidden>
+          <input type="file" id="ai-media-input" accept="image/*" hidden>
+          <input type="file" id="project-upload-input" accept="*/*" multiple hidden>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="memory-modal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <span>Память ИИ</span>
+      <button class="icon-btn" id="memory-close" title="Закрыть">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M2 2l10 10M12 2L2 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-hint" id="memory-path"></div>
+    <textarea id="memory-text" spellcheck="false"
+              placeholder="Что ИИ помнит о тебе между чатами (markdown)..."></textarea>
+    <div class="modal-foot">
+      <button class="pill danger" id="memory-clear">Очистить</button>
+      <button class="pill primary" id="memory-save">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MODELS = ["Zimple-v2:Mini", "Zimple-v2", "Zimple-v2:Pro"];
+const BROWSER_ACTIONS = ["goto", "click", "type", "press", "scroll", "back", "wait", "download", "screenshot"];
+const COMPUTER_ACTIONS = ["click", "double_click", "right_click", "type", "key", "scroll", "move", "drag", "wait", "screenshot"];
+const MAX_AGENT_STEPS = 100;
+let _consecutiveFails = 0;
+
+const SVG_CHECK = `<svg width="9" height="9" viewBox="0 0 10 10" fill="none"
+  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M2 5.3L4 7.3L8 3"/></svg>`;
+const SVG_CROSS = `<svg width="9" height="9" viewBox="0 0 10 10" fill="none"
+  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M2.5 2.5L7.5 7.5M7.5 2.5L2.5 7.5"/></svg>`;
+const SVG_LIKE = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M7 10v12"/>
+  <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
+</svg>`;
+const SVG_DISLIKE = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M17 14V2"/>
+  <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z"/>
+</svg>`;
+const SVG_REGEN = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+  <path d="M21 3v5h-5"/>
+  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+  <path d="M8 16H3v5"/>
+</svg>`;
+const SVG_COPY = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="9" y="9" width="12" height="12" rx="2"/>
+  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+</svg>`;
+const SVG_CHECK_BIG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 12.5l5 5L20 6.5"/>
+</svg>`;
+const SVG_PIN = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3-1-6z"/>
+</svg>`;
+const SVG_DOTS = `<svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+  <circle cx="8" cy="3" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="8" cy="13" r="1.4"/>
+</svg>`;
+const SVG_GLOBE = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="12" cy="12" r="9"/>
+  <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>
+</svg>`;
+const SVG_FOLDER = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M3 6.5a1.5 1.5 0 0 1 1.5-1.5h4L11 7.5h8.5a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/>
+</svg>`;
+const SVG_COMPUTER = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+  stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="4" width="18" height="12" rx="2"/>
+  <path d="M8 20h8M12 16v4"/>
+</svg>`;
+
+const LANG_BY_EXT = {
+  js:"javascript", mjs:"javascript", cjs:"javascript",
+  ts:"typescript", tsx:"typescript", jsx:"javascript",
+  py:"python", pyw:"python",
+  rb:"ruby", go:"go", rs:"rust", java:"java", kt:"kotlin", swift:"swift",
+  c:"c", h:"c", cpp:"cpp", cc:"cpp", cxx:"cpp", hpp:"cpp",
+  cs:"csharp", php:"php",
+  sh:"bash", bash:"bash", zsh:"bash", ps1:"powershell",
+  html:"xml", htm:"xml", xml:"xml", svg:"xml",
+  css:"css", scss:"scss", less:"less",
+  json:"json", yml:"yaml", yaml:"yaml", toml:"ini",
+  ini:"ini", cfg:"ini",
+  md:"markdown", markdown:"markdown",
+  sql:"sql", lua:"lua", r:"r", pl:"perl",
+  dockerfile:"dockerfile", makefile:"makefile",
+};
+
+const state = {
+  chats: [],
+  projects: [],
+  currentId: null,
+  currentProjectId: null,
+  currentProject: null,
+  currentFilePath: null,
+  view: "chat",
+  listMode: "chats",
+  model: "Zimple-v2",
+  role: "user",
+  mode: "ai",
+  labels: [],
+  lmModels: [],
+  blocks: [],
+  attachments: [],
+  agentRunning: false,
+  computerEnabled: false,
+  abort: null,
+  stopped: false,
+  listening: false,
+};
+
+const $ = (id) => document.getElementById(id);
+const messagesEl = $("messages");
+const inputEl = $("input");
+const sendBtn = $("send-btn");
+const chatListEl = $("chat-list");
+const titleEl = $("chat-title");
+const mainEl = $("main");
+
+function brandLetters(el, text, step = 70, base = 0) {
+  if (!el) return;
+  el.innerHTML = "";
+  [...text].forEach((ch, i) => {
+    const sp = document.createElement("span");
+    sp.className = "bl";
+    sp.textContent = ch;
+    sp.style.animationDelay = (base + i * step) + "ms";
+    el.appendChild(sp);
+  });
+}
+
+function animateBrand() {
+  brandLetters($("brand-name"), "Zimple");
+}
+
+/* Большой логотип на пустом экране — те же буквы + градиентное AI */
+function buildBigBrand() {
+  const wrap = document.createElement("div");
+  wrap.className = "big";
+  const name = document.createElement("span");
+  name.className = "brand-name";
+  const ai = document.createElement("span");
+  ai.className = "brand-ai";
+  ai.textContent = "AI";
+  ai.style.animationDelay = "0s, .46s";
+  wrap.appendChild(name);
+  wrap.appendChild(document.createTextNode(" "));
+  wrap.appendChild(ai);
+  brandLetters(name, "Zimple", 62);
+  return wrap;
+}
+
+function isMobile() { return window.matchMedia("(max-width: 900px)").matches; }
+
+function sanitizeTitle(t) {
+  if (t == null) return "Новый чат";
+  t = String(t).replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u2028-\u202F\uFFFD]/g, " ");
+  t = t.replace(/\s+/g, " ").trim();
+  if (t.length > 60) t = t.slice(0, 57).trim() + "...";
+  return t || "Новый чат";
+}
+
+function formatSize(bytes) {
+  if (!bytes) return "0 Б";
+  const units = ["Б", "КБ", "МБ", "ГБ"];
+  let i = 0, n = bytes;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return n < 10 && i > 0 ? n.toFixed(1) + " " + units[i] : Math.round(n) + " " + units[i];
+}
+
+function extOf(path) {
+  const m = String(path).toLowerCase().match(/\.([a-z0-9]+)$/);
+  return m ? m[1] : "";
+}
+
+function langFor(path) {
+  const ext = extOf(path);
+  if (LANG_BY_EXT[ext]) return LANG_BY_EXT[ext];
+  const name = String(path).toLowerCase();
+  if (name === "dockerfile") return "dockerfile";
+  if (name === "makefile") return "makefile";
+  if (name.startsWith(".git")) return "ini";
+  return null;
+}
+
+function deviceId() {
+  try { return localStorage.getItem("zimple_device") || ""; }
+  catch (e) { return ""; }
+}
+
+async function initDevice() {
+  if (deviceId()) return;
+  try {
+    const res = await fetch("/api/device");
+    const data = await res.json();
+    if (data && data.device_id) localStorage.setItem("zimple_device", data.device_id);
+  } catch (e) { console.warn("device id:", e); }
+}
+
+async function api(url, opts = {}) {
+  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  const dev = deviceId();
+  if (dev) headers["X-Zimple-Device"] = dev;
+  const signal = opts.signal || (state.abort ? state.abort.signal : undefined);
+  const res = await fetch(url, { ...opts, headers, signal });
+  if (!res.ok) {
+    let body = null;
+    try { body = await res.json(); } catch (e) {}
+    const err = new Error("API error " + res.status);
+    err.body = body;
+    throw err;
+  }
+  return res.json();
+}
+
+async function uploadFile(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  const dev = deviceId();
+  const res = await fetch("/api/upload", {
+    method: "POST", body: fd,
+    headers: dev ? { "X-Zimple-Device": dev } : {},
+  });
+  if (!res.ok) throw new Error("upload failed " + res.status);
+  return res.json();
+}
+
+function autoResize() {
+  if (!inputEl) return;
+  inputEl.style.height = "auto";
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + "px";
+}
+
+function renderError(e) {
+  const wrap = document.createElement("div");
+  wrap.className = "message assistant";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  const content = document.createElement("div");
+  content.className = "msg-content";
+
+  let text = "Ошибка";
+  try {
+    if (e && e.body && typeof e.body === "object") {
+      text = e.body.error || "Ошибка";
+      if (e.body.detail) text += ": " + e.body.detail;
+    } else if (e && e.message) {
+      text = e.message;
+    }
+  } catch (_) {}
+
+  content.textContent = text;
+  bubble.appendChild(content);
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  scrollBottom();
+}
+
+function setSidebar(open) {
+  const sidebar = $("sidebar");
+  const overlay = $("sidebar-overlay");
+  if (!sidebar || !overlay) return;
+  sidebar.classList.toggle("open", !!open);
+  overlay.classList.toggle("open", !!open);
+}
+
+function closeSidebarIfMobile() { if (isMobile()) setSidebar(false); }
+
+function updateSectionUI() {
+  const label = $("section-label-text");
+  const addBtn = $("section-add-btn");
+  const projBtn = $("projects-btn");
+
+  if (state.listMode === "projects") {
+    label.textContent = "Проекты";
+    addBtn.hidden = false;
+    projBtn.classList.add("active");
+    projBtn.classList.remove("ghost");
+  } else {
+    label.textContent = "Чаты";
+    addBtn.hidden = true;
+    projBtn.classList.remove("active");
+    projBtn.classList.add("ghost");
+  }
+}
+
+async function loadChats() {
+  state.chats = await api("/api/chats");
+  if (state.listMode === "chats") renderList();
+}
+
+async function loadProjects() {
+  state.projects = await api("/api/projects");
+  if (state.listMode === "projects") renderList();
+}
+
+
+/* ---------- Метки и контекстное меню чатов ---------- */
+async function loadLabels() {
+  try { state.labels = await api("/api/labels"); }
+  catch (e) { state.labels = ["важно", "работа", "проект"]; }
+}
+
+function buildChatItem(c) {
+  const el = document.createElement("div");
+  el.className = "chat-item" + (c.id === state.currentId && state.view === "chat" ? " active" : "");
+
+  const main = document.createElement("div");
+  main.className = "ci-main";
+
+  if (c.pinned) {
+    const pin = document.createElement("span");
+    pin.className = "ci-pin";
+    pin.innerHTML = SVG_PIN;
+    main.appendChild(pin);
+  }
+
+  const title = document.createElement("span");
+  title.className = "ci-title";
+  title.textContent = sanitizeTitle(c.title);
+  main.appendChild(title);
+  el.title = sanitizeTitle(c.title);
+
+  if (c.label) {
+    const lb = document.createElement("span");
+    lb.className = "chat-label";
+    lb.textContent = c.label;
+    main.appendChild(lb);
+  }
+
+  const menuBtn = document.createElement("button");
+  menuBtn.type = "button";
+  menuBtn.className = "ci-menu";
+  menuBtn.title = "Действия";
+  menuBtn.innerHTML = SVG_DOTS;
+  menuBtn.onclick = (e) => {
+    e.stopPropagation();
+    openChatContextMenu(c, menuBtn);
+  };
+
+  el.appendChild(main);
+  el.appendChild(menuBtn);
+  el.onclick = () => openChat(c.id);
+  el.oncontextmenu = (e) => { e.preventDefault(); openChatContextMenu(c, menuBtn); };
+  return el;
+}
+
+function closeCtxMenu() {
+  const m = document.getElementById("ctx-menu");
+  if (m) { m.classList.remove("open"); setTimeout(() => m.remove(), 180); }
+  document.querySelectorAll(".ci-menu.open").forEach(b => b.classList.remove("open"));
+}
+
+function ctxItem(text, opts = {}) {
+  const it = document.createElement("div");
+  it.className = "menu-item" + (opts.danger ? " danger" : "") + (opts.active ? " active" : "");
+  const left = document.createElement("span");
+  left.className = "left";
+  if (opts.dot) {
+    const d = document.createElement("span");
+    d.className = "dot-color";
+    left.appendChild(d);
+  }
+  const sp = document.createElement("span");
+  sp.textContent = text;
+  left.appendChild(sp);
+  it.appendChild(left);
+  if (opts.active) {
+    const chk = document.createElement("span");
+    chk.innerHTML = SVG_CHECK;
+    it.appendChild(chk);
+  }
+  if (opts.onClick) it.onclick = (e) => { e.stopPropagation(); opts.onClick(); };
+  return it;
+}
+
+function openChatContextMenu(c, anchor) {
+  closeCtxMenu();
+  closeMenus();
+  anchor.classList.add("open");
+
+  const menu = document.createElement("div");
+  menu.id = "ctx-menu";
+  menu.className = "ctx-menu";
+  menu.onclick = (e) => e.stopPropagation();
+
+  menu.appendChild(ctxItem(c.pinned ? "Открепить" : "Закрепить", {
+    onClick: async () => { closeCtxMenu(); await patchChat(c.id, { pinned: !c.pinned }); },
+  }));
+
+  const sep = document.createElement("div");
+  sep.className = "menu-sep";
+  menu.appendChild(sep);
+
+  const lbl = document.createElement("div");
+  lbl.className = "menu-section-label";
+  lbl.textContent = "Метка";
+  menu.appendChild(lbl);
+
+  for (const name of state.labels) {
+    menu.appendChild(ctxItem(name, {
+      dot: true,
+      active: c.label === name,
+      onClick: async () => {
+        closeCtxMenu();
+        await patchChat(c.id, { label: c.label === name ? null : name });
+      },
+    }));
+  }
+
+  if (c.label) {
+    menu.appendChild(ctxItem("Снять метку", {
+      onClick: async () => { closeCtxMenu(); await patchChat(c.id, { label: null }); },
+    }));
+  }
+
+  menu.appendChild(ctxItem("Добавить свой…", {
+    onClick: async () => {
+      closeCtxMenu();
+      const name = prompt("Название метки:", "");
+      if (!name || !name.trim()) return;
+      const clean = name.trim().slice(0, 24);
+      try {
+        state.labels = await api("/api/labels", {
+          method: "POST",
+          body: JSON.stringify({ name: clean }),
+        });
+      } catch (e) { console.error(e); }
+      await patchChat(c.id, { label: clean });
+    },
+  }));
+
+  const sep2 = document.createElement("div");
+  sep2.className = "menu-sep";
+  menu.appendChild(sep2);
+
+  menu.appendChild(ctxItem("Переименовать", {
+    onClick: async () => {
+      closeCtxMenu();
+      const t = prompt("Название чата:", sanitizeTitle(c.title));
+      if (t === null) return;
+      await patchChat(c.id, { title: t });
+      if (state.currentId === c.id) titleEl.textContent = sanitizeTitle(t);
+    },
+  }));
+
+  menu.appendChild(ctxItem("Удалить", {
+    danger: true,
+    onClick: async () => {
+      closeCtxMenu();
+      if (!confirm("Удалить чат «" + sanitizeTitle(c.title) + "»?")) return;
+      await deleteChat(c.id);
+    },
+  }));
+
+  document.body.appendChild(menu);
+  const r = anchor.getBoundingClientRect();
+  const w = menu.offsetWidth || 208;
+  const h = menu.offsetHeight || 260;
+  let left = Math.min(r.left, window.innerWidth - w - 10);
+  let top = r.bottom + 6;
+  if (top + h > window.innerHeight - 10) top = Math.max(10, r.top - h - 6);
+  menu.style.left = Math.max(10, left) + "px";
+  menu.style.top = top + "px";
+  requestAnimationFrame(() => menu.classList.add("open"));
+}
+
+async function patchChat(id, patch) {
+  try {
+    await api("/api/chats/" + id, { method: "PATCH", body: JSON.stringify(patch) });
+  } catch (e) { console.error(e); }
+  await loadChats();
+  renderList();
+}
+
+async function deleteChat(id) {
+  try {
+    await api("/api/chats/" + id, { method: "DELETE" });
+  } catch (e) { console.error(e); }
+  await loadChats();
+  if (state.currentId === id) {
+    if (state.chats.length) await openChat(state.chats[0].id);
+    else await newChat();
+  }
+  renderList();
+}
+
+function renderList() {
+  chatListEl.innerHTML = "";
+
+  if (state.listMode === "chats") {
+    if (!state.chats.length) {
+      const hint = document.createElement("div");
+      hint.className = "chat-item";
+      hint.style.color = "#b0b0b5";
+      hint.style.cursor = "default";
+      hint.textContent = "Пока пусто";
+      chatListEl.appendChild(hint);
+      return;
+    }
+    for (const c of state.chats) {
+      chatListEl.appendChild(buildChatItem(c));
+    }
+    return;
+  }
+
+  if (!state.projects.length) {
+    const hint = document.createElement("div");
+    hint.className = "chat-item";
+    hint.style.color = "#b0b0b5";
+    hint.style.cursor = "default";
+    hint.textContent = "Нет проектов";
+    chatListEl.appendChild(hint);
+    return;
+  }
+  for (const p of state.projects) {
+    const el = document.createElement("div");
+    el.className = "chat-item" + (p.id === state.currentProjectId && state.view === "project" ? " active" : "");
+    const name = sanitizeTitle(p.name);
+    el.textContent = name;
+    el.title = name;
+    const badge = document.createElement("span");
+    badge.className = "badge-mini";
+    badge.textContent = (p.files_count || 0) + " ф.";
+    el.appendChild(badge);
+    el.onclick = () => openProject(p.id);
+    chatListEl.appendChild(el);
+  }
+}
+
+async function newChat() {
+  const chat = await api("/api/chats", { method: "POST", body: "{}" });
+  state.chats.unshift(chat);
+  state.listMode = "chats";
+  await openChat(chat.id);
+  inputEl.focus();
+}
+
+async function newProject() {
+  const name = prompt("Название проекта:", "Новый проект");
+  if (!name) return;
+  const proj = await api("/api/projects", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  await loadProjects();
+  state.listMode = "projects";
+  updateSectionUI();
+  await openProject(proj.id);
+}
+
+async function openChat(id) {
+  state.view = "chat";
+  state.currentId = id;
+  state.currentProjectId = null;
+  state.currentProject = null;
+  state.currentFilePath = null;
+
+  const chat = await api("/api/chats/" + id);
+  titleEl.textContent = sanitizeTitle(chat.title);
+  titleEl.classList.remove("with-project-badge");
+
+  $("project-side").hidden = true;
+  mainEl.classList.remove("has-project");
+  $("project-toggle-btn").hidden = true;
+
+  if (state.listMode !== "chats") {
+    state.listMode = "chats";
+    updateSectionUI();
+  }
+  renderList();
+  renderMessages(chat);
+  closeSidebarIfMobile();
+}
+
+async function openProject(pid) {
+  state.view = "project";
+  state.currentProjectId = pid;
+  state.currentFilePath = null;
+
+  const proj = await api("/api/projects/" + pid);
+  state.currentProject = proj;
+  state.currentId = proj.chat_id;
+
+  titleEl.innerHTML = "";
+  const nameSpan = document.createElement("span");
+  nameSpan.textContent = sanitizeTitle(proj.name);
+  titleEl.appendChild(nameSpan);
+  const badgeSpan = document.createElement("span");
+  badgeSpan.className = "tt-project";
+  badgeSpan.textContent = "проект";
+  titleEl.appendChild(badgeSpan);
+
+  $("project-side").hidden = false;
+  mainEl.classList.add("has-project");
+  $("project-toggle-btn").hidden = !isMobile();
+
+  if (state.listMode !== "projects") {
+    state.listMode = "projects";
+    updateSectionUI();
+  }
+  renderList();
+
+  renderProjectFiles(proj.files || []);
+  renderProjectViewer(null);
+
+  const chat = await api("/api/chats/" + proj.chat_id);
+  renderMessages(chat);
+  closeSidebarIfMobile();
+}
+
+function renderProjectFiles(files) {
+  const list = $("project-files-list");
+  list.innerHTML = "";
+  if (!files.length) return;
+
+  for (const f of files) {
+    const el = document.createElement("div");
+    el.className = "pfile" + (f.path === state.currentFilePath ? " active" : "");
+    el.title = f.path;
+
+    const icon = document.createElement("span");
+    icon.className = "ficon";
+    icon.innerHTML = SVG_FOLDER;
+    el.appendChild(icon);
+
+    const name = document.createElement("span");
+    name.className = "fname";
+    name.textContent = f.path;
+    el.appendChild(name);
+
+    const size = document.createElement("span");
+    size.className = "fsize";
+    size.textContent = formatSize(f.size);
+    el.appendChild(size);
+
+    el.onclick = () => openProjectFile(f.path);
+    list.appendChild(el);
+  }
+}
+
+async function refreshProjectFiles() {
+  if (!state.currentProjectId) return;
+  try {
+    const proj = await api("/api/projects/" + state.currentProjectId);
+    state.currentProject = proj;
+    renderProjectFiles(proj.files || []);
+
+    const cached = state.projects.find(p => p.id === state.currentProjectId);
+    if (cached) cached.files_count = (proj.files || []).length;
+    if (state.listMode === "projects") renderList();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function openProjectFile(path) {
+  state.currentFilePath = path;
+  document.querySelectorAll(".pfile").forEach((el) => {
+    el.classList.toggle("active", el.title === path);
+  });
+
+  const viewer = $("project-viewer");
+  viewer.innerHTML = `<div class="viewer-empty">Загрузка…</div>`;
+
+  try {
+    const res = await api(
+      `/api/projects/${state.currentProjectId}/file?path=${encodeURIComponent(path)}`
+    );
+    renderProjectViewer(res);
+  } catch (e) {
+    viewer.innerHTML = `<div class="viewer-note">Ошибка загрузки файла</div>`;
+  }
+}
+
+function renderProjectViewer(data) {
+  const viewer = $("project-viewer");
+  viewer.innerHTML = "";
+
+  if (!data) {
+    const empty = document.createElement("div");
+    empty.className = "viewer-empty";
+    empty.textContent = "Выбери файл, чтобы посмотреть содержимое";
+    viewer.appendChild(empty);
+    return;
+  }
+
+  if (data.kind === "image") {
+    const img = document.createElement("img");
+    img.src = `/api/projects/${state.currentProjectId}/file?path=${encodeURIComponent(data.path)}&raw=1`;
+    img.className = "viewer-image";
+    viewer.appendChild(img);
+    return;
+  }
+
+  if (data.kind === "video") {
+    const v = document.createElement("video");
+    v.src = `/api/projects/${state.currentProjectId}/file?path=${encodeURIComponent(data.path)}&raw=1`;
+    v.controls = true;
+    v.playsInline = true;
+    v.style.maxWidth = "100%";
+    v.style.padding = "16px";
+    viewer.appendChild(v);
+    return;
+  }
+
+  if (data.kind === "binary") {
+    const note = document.createElement("div");
+    note.className = "viewer-note";
+    note.textContent = "Бинарный файл — просмотр недоступен";
+    viewer.appendChild(note);
+    return;
+  }
+
+  const content = String(data.content ?? "");
+  const lines = content.split("\n");
+  const wrapper = document.createElement("div");
+  wrapper.className = "code-view";
+
+  const gutter = document.createElement("div");
+  gutter.className = "code-gutter";
+  let numbersText = "";
+  for (let i = 1; i <= lines.length; i++) {
+    numbersText += i + "\n";
+  }
+  gutter.textContent = numbersText.trimEnd();
+  wrapper.appendChild(gutter);
+
+  const pre = document.createElement("pre");
+  pre.className = "code-body";
+  const code = document.createElement("code");
+  const lang = langFor(data.path);
+  const canHl = lang && window.hljs && hljs.getLanguage && hljs.getLanguage(lang);
+  if (canHl) {
+    try {
+      code.innerHTML = hljs.highlight(content, { language: lang, ignoreIllegals: true }).value;
+    } catch (e) {
+      code.textContent = content;
+    }
+  } else {
+    code.textContent = content;
+  }
+  pre.appendChild(code);
+  wrapper.appendChild(pre);
+  viewer.appendChild(wrapper);
+}
+
+async function uploadProjectFiles(fileList) {
+  if (!state.currentProjectId || !fileList || !fileList.length) return;
+  const fd = new FormData();
+  for (const f of fileList) {
+    const rel = f.webkitRelativePath || f.name;
+    fd.append("files", f, rel);
+  }
+  const res = await fetch(`/api/projects/${state.currentProjectId}/upload`, {
+    method: "POST",
+    body: fd,
+  });
+  if (!res.ok) {
+    console.error("upload failed", await res.text().catch(() => ""));
+    return;
+  }
+  await refreshProjectFiles();
+}
+
+function makeReasoning(text) {
+  const el = document.createElement("div");
+  el.className = "reasoning-block";
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "reasoning-head";
+  head.innerHTML = `
+    <svg class="chev" viewBox="0 0 10 10" fill="none"
+         stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.5 2L7 5L3.5 8"/>
+    </svg>
+    <span>Reasoning</span>`;
+  head.onclick = (e) => { e.stopPropagation(); el.classList.toggle("open"); };
+  const body = document.createElement("div");
+  body.className = "reasoning-body";
+  const clip = document.createElement("div");
+  clip.className = "reasoning-clip";
+  const txt = document.createElement("div");
+  txt.className = "reasoning-text";
+  txt.textContent = text;
+  clip.appendChild(txt);
+  body.appendChild(clip);
+  el.appendChild(head);
+  el.appendChild(body);
+  return el;
+}
+
+function makeStatus(text, ok = true) {
+  const el = document.createElement("div");
+  el.className = "status-chip";
+  const mark = document.createElement("span");
+  mark.className = "status-mark" + (ok ? "" : " fail");
+  mark.innerHTML = ok ? SVG_CHECK : SVG_CROSS;
+  const txt = document.createElement("span");
+  txt.className = "status-text";
+  txt.textContent = text;
+  el.appendChild(mark);
+  el.appendChild(txt);
+  return el;
+}
+
+function makeBrowserChip(text) {
+  const el = document.createElement("div");
+  el.className = "browser-chip";
+  const mark = document.createElement("span");
+  mark.className = "browser-mark";
+  mark.innerHTML = SVG_GLOBE;
+  const txt = document.createElement("span");
+  txt.className = "status-text";
+  txt.textContent = text;
+  el.appendChild(mark);
+  el.appendChild(txt);
+  return el;
+}
+
+function makeComputerChip(text) {
+  const el = document.createElement("div");
+  el.className = "computer-chip";
+  const mark = document.createElement("span");
+  mark.className = "computer-mark";
+  mark.innerHTML = SVG_COMPUTER;
+  const txt = document.createElement("span");
+  txt.className = "status-text";
+  txt.textContent = text;
+  el.appendChild(mark);
+  el.appendChild(txt);
+  return el;
+}
+
+function makeProjectChip(text, path) {
+  const el = document.createElement("div");
+  el.className = "project-chip";
+  const mark = document.createElement("span");
+  mark.className = "project-mark";
+  mark.innerHTML = SVG_FOLDER;
+  el.appendChild(mark);
+
+  const txt = document.createElement("span");
+  txt.className = "status-text";
+  txt.textContent = text || "";
+  el.appendChild(txt);
+
+  if (path) {
+    const p = document.createElement("span");
+    p.className = "path";
+    p.textContent = path;
+    el.appendChild(p);
+  }
+  return el;
+}
+
+function makeFileChip(text, path) {
+  const el = document.createElement("div");
+  el.className = "project-chip";
+  const mark = document.createElement("span");
+  mark.className = "project-mark";
+  mark.innerHTML = SVG_FOLDER;
+  el.appendChild(mark);
+
+  const txt = document.createElement("span");
+  txt.className = "status-text";
+  txt.textContent = text || "";
+  el.appendChild(txt);
+
+  if (path) {
+    const p = document.createElement("span");
+    p.className = "path";
+    p.textContent = path;
+    el.appendChild(p);
+  }
+  return el;
+}
+
+function makeMedia(url, filename, kind) {
+  const el = document.createElement("div");
+  el.className = "media-block";
+  if (kind === "image") {
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = filename || "";
+    img.loading = "lazy";
+    el.appendChild(img);
+  } else {
+    const v = document.createElement("video");
+    v.src = url;
+    v.controls = true;
+    v.preload = "metadata";
+    v.playsInline = true;
+    el.appendChild(v);
+  }
+  return el;
+}
+
+function escHtml(t) {
+  return String(t)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/* Инлайн-разметка: `код`, **жирный**, *курсив*, ~~зачёркнутый~~, ссылки */
+function mdInline(src) {
+  let t = escHtml(src);
+  const codes = [];
+  t = t.replace(/`([^`\n]+)`/g, (m, c) => {
+    codes.push(c);
+    return "\u0000" + (codes.length - 1) + "\u0000";
+  });
+  t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  t = t.replace(/(^|[\s(])((?:https?:\/\/)[^\s<)]+)/g,
+    '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+  t = t.replace(/\*\*\*([^*]+)\*\*\*/g, "<strong><em>$1</em></strong>");
+  t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  t = t.replace(/(^|[^*\w])\*([^*\n]+)\*(?![*\w])/g, "$1<em>$2</em>");
+  t = t.replace(/(^|[^_\w])_([^_\n]+)_(?![_\w])/g, "$1<em>$2</em>");
+  t = t.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  t = t.replace(/\u0000(\d+)\u0000/g,
+    (m, i) => '<code class="inline">' + escHtml(codes[+i]) + "</code>");
+  return t;
+}
+
+function makeCodeCard(lang, code) {
+  const card = document.createElement("div");
+  card.className = "code-card";
+  const head = document.createElement("div");
+  head.className = "cc-head";
+  const name = document.createElement("span");
+  name.textContent = lang || "код";
+  const copy = document.createElement("button");
+  copy.type = "button";
+  copy.className = "cc-copy";
+  copy.textContent = "Копировать";
+  copy.onclick = async (e) => {
+    e.stopPropagation();
+    await copyText(code);
+    copy.textContent = "Скопировано";
+    copy.classList.add("done");
+    setTimeout(() => { copy.textContent = "Копировать"; copy.classList.remove("done"); }, 1600);
+  };
+  head.appendChild(name);
+  head.appendChild(copy);
+  const pre = document.createElement("pre");
+  const cd = document.createElement("code");
+  cd.textContent = code;
+  const hl = lang && window.hljs && hljs.getLanguage(lang) ? lang : null;
+  if (hl) {
+    try { cd.innerHTML = hljs.highlight(code, { language: hl }).value; } catch (_) {}
+  }
+  pre.appendChild(cd);
+  card.appendChild(head);
+  card.appendChild(pre);
+  return card;
+}
+
+/* Блочный markdown → DOM */
+function renderMarkdown(text) {
+  const root = document.createElement("div");
+  const lines = String(text).replace(/\r\n/g, "\n").split("\n");
+  let i = 0;
+  let para = [];
+
+  const flushPara = () => {
+    if (!para.length) return;
+    const p = document.createElement("p");
+    p.innerHTML = mdInline(para.join("\n")).replace(/\n/g, "<br>");
+    root.appendChild(p);
+    para = [];
+  };
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    const fence = line.match(/^\s*```\s*([a-zA-Z0-9+#_-]*)\s*$/);
+    if (fence) {
+      flushPara();
+      const lang = (fence[1] || "").toLowerCase();
+      const buf = [];
+      i++;
+      while (i < lines.length && !/^\s*```\s*$/.test(lines[i])) { buf.push(lines[i]); i++; }
+      i++;
+      root.appendChild(makeCodeCard(lang, buf.join("\n")));
+      continue;
+    }
+
+    const head = line.match(/^(#{1,3})\s+(.*)$/);
+    if (head) {
+      flushPara();
+      const h = document.createElement("h" + head[1].length);
+      h.innerHTML = mdInline(head[2]);
+      root.appendChild(h);
+      i++; continue;
+    }
+
+    if (/^\s*([-*_])\1{2,}\s*$/.test(line)) {
+      flushPara();
+      root.appendChild(document.createElement("hr"));
+      i++; continue;
+    }
+
+    if (/^\s*>\s?/.test(line)) {
+      flushPara();
+      const buf = [];
+      while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+        buf.push(lines[i].replace(/^\s*>\s?/, "")); i++;
+      }
+      const bq = document.createElement("blockquote");
+      bq.innerHTML = mdInline(buf.join("\n")).replace(/\n/g, "<br>");
+      root.appendChild(bq);
+      continue;
+    }
+
+    if (/^\s*([-*+]|\d+[.)])\s+/.test(line)) {
+      flushPara();
+      const ordered = /^\s*\d+[.)]\s+/.test(line);
+      const list = document.createElement(ordered ? "ol" : "ul");
+      while (i < lines.length && /^\s*([-*+]|\d+[.)])\s+/.test(lines[i])) {
+        const isOrd = /^\s*\d+[.)]\s+/.test(lines[i]);
+        if (isOrd !== ordered) break;
+        const li = document.createElement("li");
+        li.innerHTML = mdInline(lines[i].replace(/^\s*([-*+]|\d+[.)])\s+/, ""));
+        list.appendChild(li);
+        i++;
+      }
+      root.appendChild(list);
+      continue;
+    }
+
+    if (/\|/.test(line) && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])) {
+      flushPara();
+      const rows = [];
+      const split = (l) => l.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map(x => x.trim());
+      const header = split(line);
+      i += 2;
+      while (i < lines.length && /\|/.test(lines[i]) && lines[i].trim()) { rows.push(split(lines[i])); i++; }
+      const table = document.createElement("table");
+      const thead = document.createElement("tr");
+      header.forEach(h => {
+        const th = document.createElement("th");
+        th.innerHTML = mdInline(h);
+        thead.appendChild(th);
+      });
+      table.appendChild(thead);
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        r.forEach(cell => {
+          const td = document.createElement("td");
+          td.innerHTML = mdInline(cell);
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+      root.appendChild(table);
+      continue;
+    }
+
+    if (!line.trim()) { flushPara(); i++; continue; }
+
+    para.push(line);
+    i++;
+  }
+  flushPara();
+  return root;
+}
+
+/* Пословная анимация появления — только для текстовых узлов */
+function animateWordsIn(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) =>
+      n.parentElement && n.parentElement.closest("pre, code")
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT,
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  let wordIndex = 0;
+  for (const node of nodes) {
+    const tokens = node.nodeValue.split(/(\s+)/);
+    const frag = document.createDocumentFragment();
+    for (const tok of tokens) {
+      if (!tok) continue;
+      if (/^\s+$/.test(tok)) { frag.appendChild(document.createTextNode(tok)); continue; }
+      const span = document.createElement("span");
+      span.className = "word";
+      span.textContent = tok;
+      span.style.animationDelay = Math.min(wordIndex * 16, 1600) + "ms";
+      frag.appendChild(span);
+      wordIndex++;
+    }
+    node.parentNode.replaceChild(frag, node);
+  }
+}
+
+function buildTextElement(text, animateWords) {
+  const el = document.createElement("div");
+  el.className = "msg-content md";
+  const rendered = renderMarkdown(text);
+  while (rendered.firstChild) el.appendChild(rendered.firstChild);
+  if (animateWords) animateWordsIn(el);
+  return el;
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      return true;
+    } catch (_) { return false; }
+  }
+}
+
+function flashCopy(btn) {
+  const prev = btn.innerHTML;
+  btn.innerHTML = SVG_CHECK_BIG;
+  btn.classList.add("done");
+  setTimeout(() => { btn.innerHTML = prev; btn.classList.remove("done"); }, 1500);
+}
+function makeActionBtn(svg, title, cls) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "action-btn " + cls;
+  b.title = title;
+  b.innerHTML = svg;
+  return b;
+}
+
+function updateActionsUI(row, m) {
+  const like = row.querySelector(".action-btn.like");
+  const dislike = row.querySelector(".action-btn.dislike");
+  if (like) like.classList.toggle("active", m.liked === "up");
+  if (dislike) dislike.classList.toggle("active", m.liked === "down");
+}
+
+function makeActions(m) {
+  const row = document.createElement("div");
+  row.className = "msg-actions";
+  const likeBtn = makeActionBtn(SVG_LIKE, "Нравится", "like");
+  const dislikeBtn = makeActionBtn(SVG_DISLIKE, "Не нравится", "dislike");
+  const regenBtn = makeActionBtn(SVG_REGEN, "Перегенерировать", "regen");
+  const copyBtn = makeActionBtn(SVG_COPY, "Копировать", "copy");
+  copyBtn.onclick = async (e) => {
+    e.stopPropagation();
+    const el = document.querySelector(`.message[data-mid="${m.id}"] .msg-content`);
+    const text = m.content || (el ? el.innerText : "");
+    if (await copyText(text)) flashCopy(copyBtn);
+  };
+  row.appendChild(copyBtn);
+  row.appendChild(likeBtn);
+  row.appendChild(dislikeBtn);
+  row.appendChild(regenBtn);
+  updateActionsUI(row, m);
+  likeBtn.onclick = (e) => { e.stopPropagation(); toggleLike(m, "up", row); };
+  dislikeBtn.onclick = (e) => { e.stopPropagation(); toggleLike(m, "down", row); };
+  regenBtn.onclick = (e) => {
+    e.stopPropagation();
+    regenBtn.classList.remove("spinning");
+    void regenBtn.offsetWidth;
+    regenBtn.classList.add("spinning");
+    setTimeout(() => regenBtn.classList.remove("spinning"), 620);
+    regenerateMessage(m);
+  };
+  return row;
+}
+
+async function toggleLike(m, direction, row) {
+  const next = m.liked === direction ? null : direction;
+  m.liked = next;
+  updateActionsUI(row, m);
+  try {
+    await api(`/api/chats/${state.currentId}/messages/${m.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ liked: next }),
+    });
+  } catch (e) { console.error(e); }
+}
+
+function regenerateMessage(m) {
+  const el = document.querySelector(`.message[data-mid="${m.id}"]`);
+  if (!el) return;
+  const parent = el.parentNode;
+  const next = el.nextSibling;
+  el.remove();
+  const newEl = buildMessage(m, {});
+  parent.insertBefore(newEl, next);
+  scrollBottom();
+}
+
+function createAssistantShell(m) {
+  const wrap = document.createElement("div");
+  wrap.className = "message assistant";
+  wrap.dataset.mid = m.id;
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+
+  if (m.model) {
+    const label = document.createElement("div");
+    label.className = "msg-label";
+    label.textContent = m.model;
+    bubble.appendChild(label);
+  }
+
+  const stepsEl = document.createElement("div");
+  stepsEl.className = "agent-steps";
+  bubble.appendChild(stepsEl);
+
+  const working = document.createElement("div");
+  working.className = "agent-working";
+  working.innerHTML = `
+    <div class="aw-dots"><span></span><span></span><span></span></div>
+    <span class="aw-text">работаю</span>
+  `;
+  bubble.appendChild(working);
+
+  const screenEl = document.createElement("div");
+  screenEl.className = "agent-screen";
+  bubble.appendChild(screenEl);
+
+  const contentEl = document.createElement("div");
+  contentEl.className = "msg-content";
+  contentEl.style.display = "none";
+  bubble.appendChild(contentEl);
+
+  wrap.appendChild(bubble);
+  wrap.appendChild(makeActions(m));
+
+  wrap._stepsEl = stepsEl;
+  wrap._screenEl = screenEl;
+  wrap._contentEl = contentEl;
+  wrap._workingEl = working;
+
+  return wrap;
+}
+
+function setWorking(msgEl, on) {
+  if (!msgEl || !msgEl._workingEl) return;
+  msgEl._workingEl.classList.toggle("visible", !!on);
+}
+
+function updateScreenshot(msgEl, url) {
+  const screenEl = msgEl._screenEl;
+  if (!screenEl) return;
+  screenEl.classList.remove("loading");
+  screenEl.classList.add("visible");
+  const old = screenEl.querySelector("img");
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = "";
+  if (old) screenEl.replaceChild(img, old);
+  else screenEl.appendChild(img);
+}
+
+function showScreenshotLoading(msgEl) {
+  const screenEl = msgEl._screenEl;
+  if (!screenEl) return;
+  if (screenEl.querySelector("img")) return;
+  screenEl.classList.add("visible", "loading");
+}
+
+async function runBrowserAction(chipEl, msgEl, block, blockIndex) {
+  chipEl.classList.add("running");
+  showScreenshotLoading(msgEl);
+  const action = {
+    action: block.action,
+    url: block.url,
+    selector: block.selector,
+    value: block.value,
+    key: block.key,
+    dy: block.dy,
+    seconds: block.seconds,
+    wait_until: block.wait_until,
+  };
+  try {
+    const res = await api("/api/browser/exec", {
+      method: "POST",
+      body: JSON.stringify({
+        cid: state.currentId,
+        mid: msgEl.dataset.mid,
+        bidx: blockIndex,
+        action,
+      }),
+    });
+    chipEl.classList.remove("running");
+    if (res.downloads && res.downloads.length) {
+      block.downloads = res.downloads;
+      for (const d of res.downloads) {
+        if (!d || !d.path) continue;
+        const p = document.createElement("span");
+        p.className = "path";
+        p.textContent = d.path;
+        chipEl.appendChild(p);
+      }
+    }
+    if (res.screenshot) {
+      chipEl.classList.add("done");
+      block.screenshot = res.screenshot;
+      updateScreenshot(msgEl, res.screenshot);
+    } else if (res.error) {
+      chipEl.classList.add("fail");
+      console.warn("browser error:", res.error);
+    }
+  } catch (err) {
+    chipEl.classList.remove("running");
+    chipEl.classList.add("fail");
+    console.warn("browser exception:", err);
+  }
+}
+
+async function runComputerAction(chipEl, msgEl, block, blockIndex) {
+  chipEl.classList.add("running");
+  showScreenshotLoading(msgEl);
+  const action = {
+    action: block.action,
+    target: block.target,
+    x: block.x, y: block.y,
+    x1: block.x1, y1: block.y1,
+    x2: block.x2, y2: block.y2,
+    value: block.value,
+    keys: block.keys,
+    dy: block.dy,
+    seconds: block.seconds,
+  };
+  try {
+    const res = await api("/api/computer/exec", {
+      method: "POST",
+      body: JSON.stringify({
+        cid: state.currentId,
+        mid: msgEl.dataset.mid,
+        bidx: blockIndex,
+        action,
+      }),
+    });
+    chipEl.classList.remove("running");
+    if (res.error === "disabled") {
+      chipEl.classList.add("fail");
+      console.warn("computer control disabled");
+      return;
+    }
+    if (res.screenshot) {
+      chipEl.classList.add("done");
+      block.screenshot = res.screenshot;
+      updateScreenshot(msgEl, res.screenshot);
+    } else if (res.error) {
+      chipEl.classList.add("fail");
+      console.warn("computer error:", res.error);
+    }
+  } catch (err) {
+    chipEl.classList.remove("running");
+    chipEl.classList.add("fail");
+    console.warn("computer exception:", err);
+  }
+}
+
+function setMessageContent(msgEl, text, opts = {}) {
+  if (!text) return;
+  const animate = !!opts.animateText;
+  const target = msgEl._contentEl;
+  if (!target) return;
+
+  const newEl = buildTextElement(text, animate);
+  target.textContent = "";
+  while (newEl.firstChild) target.appendChild(newEl.firstChild);
+  target.style.display = "";
+}
+
+function hasActionBlocks(blocks) {
+  if (!Array.isArray(blocks)) return false;
+  return blocks.some(b => b && (b.type === "browser" || b.type === "project" || b.type === "computer" || b.type === "file"));
+}
+
+async function runProjectAction(chipEl, msgEl, block, blockIndex) {
+  const pid = state.currentProjectId
+    || (state.currentProject && state.currentProject.id);
+  if (!pid) {
+    chipEl.classList.add("fail");
+    console.warn("no current project id for project action");
+    return;
+  }
+  chipEl.classList.add("running");
+  const action = {
+    action: block.action,
+    path: block.path,
+    content: block.content,
+    find: block.find,
+    replace: block.replace,
+    count: block.count,
+  };
+  try {
+    const res = await api(`/api/projects/${pid}/exec`, {
+      method: "POST",
+      body: JSON.stringify({
+        cid: state.currentId,
+        mid: msgEl.dataset.mid,
+        bidx: blockIndex,
+        action,
+      }),
+    });
+    chipEl.classList.remove("running");
+    block.result = res;
+    if (res && res.ok) {
+      chipEl.classList.add("done");
+    } else {
+      chipEl.classList.add("fail");
+    }
+
+    await refreshProjectFiles();
+
+    const affectedPath = res && res.path;
+    if (affectedPath) {
+      await openProjectFile(affectedPath);
+    } else if (block.action === "read_file" && block.path) {
+      await openProjectFile(block.path);
+    }
+  } catch (err) {
+    chipEl.classList.remove("running");
+    chipEl.classList.add("fail");
+    console.warn("project exception:", err);
+  }
+}
+
+async function runFileAction(chipEl, msgEl, block, blockIndex) {
+  chipEl.classList.add("running");
+  const action = {
+    action: block.action,
+    path: block.path,
+    content: block.content,
+  };
+  try {
+    const res = await api("/api/local/exec", {
+      method: "POST",
+      body: JSON.stringify({
+        cid: state.currentId,
+        mid: msgEl.dataset.mid,
+        bidx: blockIndex,
+        action,
+      }),
+    });
+    chipEl.classList.remove("running");
+    block.result = res;
+    if (res && res.ok) {
+      chipEl.classList.add("done");
+      if (res.path) {
+        const p = document.createElement("span");
+        p.className = "path";
+        p.textContent = res.path;
+        chipEl.appendChild(p);
+      }
+    } else {
+      chipEl.classList.add("fail");
+      console.warn("file action error:", res && res.error);
+    }
+  } catch (err) {
+    chipEl.classList.remove("running");
+    chipEl.classList.add("fail");
+    console.warn("file action exception:", err);
+  }
+}
+
+function appendBlocksToMessage(msgEl, blocks, opts = {}) {
+  const runBrowser = !!opts.runBrowser;
+  const runProject = !!opts.runProject;
+  const runComputer = !!opts.runComputer;
+  const runFile = !!opts.runFile;
+  const startIndex = (msgEl._blockCount || 0);
+  const stepsEl = msgEl._stepsEl;
+
+  return new Promise((resolve) => {
+    let cumulative = 0;
+    const promises = [];
+
+    blocks.forEach((b, i) => {
+      if (!b) return;
+
+      let el = null;
+
+      if (b.type === "reasoning" && b.text) {
+        el = makeReasoning(b.text);
+      } else if (b.type === "status" && b.text) {
+        el = makeStatus(b.text, b.ok !== false);
+      } else if (b.type === "browser" && b.text) {
+        el = makeBrowserChip(b.text);
+      } else if (b.type === "computer" && b.text) {
+        el = makeComputerChip(b.text);
+      } else if (b.type === "project" && b.text) {
+        el = makeProjectChip(b.text, b.path);
+      } else if (b.type === "file" && b.text) {
+        el = makeFileChip(b.text, b.path);
+      } else if (b.type === "memory") {
+        el = makeStatus(b.text || "Обновляю память", !(b.result && b.result.ok === false));
+      } else if (b.type === "image" && b.url) {
+        el = makeMedia(b.url, b.filename, "image");
+      } else if (b.type === "video" && b.url) {
+        el = makeMedia(b.url, b.filename, "video");
+      }
+      if (!el) return;
+
+      const delay = Math.max(0, Number(b.delay) || 0);
+      cumulative += delay * 1000;
+
+      el.style.display = "none";
+      stepsEl.appendChild(el);
+
+      if (b.type === "browser" && b.screenshot) {
+        el.classList.add("done");
+        updateScreenshot(msgEl, b.screenshot);
+      }
+      if (b.type === "browser" && b.downloads) {
+        for (const d of b.downloads) {
+          if (!d || !d.path) continue;
+          const p = document.createElement("span");
+          p.className = "path";
+          p.textContent = d.path;
+          el.appendChild(p);
+        }
+      }
+      if (b.type === "computer" && b.screenshot) {
+        el.classList.add("done");
+        updateScreenshot(msgEl, b.screenshot);
+      }
+      if (b.type === "project" && b.result) {
+        el.classList.add(b.result.ok ? "done" : "fail");
+      }
+      if (b.type === "file" && b.result) {
+        el.classList.add(b.result.ok ? "done" : "fail");
+      }
+
+      const blockIndex = startIndex + i;
+      const revealAt = cumulative;
+
+      const p = new Promise((res) => {
+        const show = () => {
+          el.style.display = "";
+          scrollBottom();
+          res();
+        };
+        if (revealAt === 0) show();
+        else setTimeout(show, revealAt);
+      });
+      promises.push(p);
+
+      if (b.type === "browser" && runBrowser && !b.screenshot) {
+        const bp = p.then(() => runBrowserAction(el, msgEl, b, blockIndex));
+        promises.push(bp);
+      }
+
+      if (b.type === "computer" && runComputer && !b.screenshot) {
+        const cp = p.then(() => runComputerAction(el, msgEl, b, blockIndex));
+        promises.push(cp);
+      }
+
+      if (b.type === "project" && runProject && !b.result) {
+        const pp = p.then(() => runProjectAction(el, msgEl, b, blockIndex));
+        promises.push(pp);
+      }
+
+      if (b.type === "file" && runFile && !b.result) {
+        const fp = p.then(() => runFileAction(el, msgEl, b, blockIndex));
+        promises.push(fp);
+      }
+    });
+
+    msgEl._blockCount = startIndex + blocks.length;
+    Promise.all(promises).then(resolve);
+  });
+}
+
+function buildMessage(m, opts = {}) {
+  if (m.role === "assistant") {
+    const el = createAssistantShell(m);
+    appendBlocksToMessage(el, m.blocks || [], { runBrowser: false, runProject: false, runComputer: false, runFile: false });
+    if (m.content) setMessageContent(el, m.content, { animateText: false });
+    return el;
+  }
+
+  const wrap = document.createElement("div");
+  wrap.className = "message user";
+  wrap.dataset.mid = m.id;
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+
+  if (Array.isArray(m.attachments)) {
+    for (const a of m.attachments) {
+      if (!a || !a.url) continue;
+      if (a.type === "image") bubble.appendChild(makeMedia(a.url, a.filename, "image"));
+      else if (a.type === "video") bubble.appendChild(makeMedia(a.url, a.filename, "video"));
+    }
+  }
+  if (m.content) {
+    bubble.appendChild(buildTextElement(m.content, false));
+  }
+  wrap.appendChild(bubble);
+
+  const actions = document.createElement("div");
+  actions.className = "msg-actions";
+  actions.style.alignSelf = "flex-end";
+  const copyBtn = makeActionBtn(SVG_COPY, "Копировать", "copy");
+  copyBtn.onclick = async (e) => {
+    e.stopPropagation();
+    if (await copyText(m.content || "")) flashCopy(copyBtn);
+  };
+  actions.appendChild(copyBtn);
+  wrap.appendChild(actions);
+  wrap.style.flexDirection = "column";
+  wrap.style.alignItems = "flex-end";
+  return wrap;
+}
+
+function renderMessages(chat) {
+  messagesEl.innerHTML = "";
+  const visible = (chat.messages || []).filter(m => !m.hidden);
+  if (!visible.length) {
+    let hint = "Напишите что-нибудь — я могу управлять браузером и рабочим столом.";
+    if (state.view === "project") {
+      hint = "Загрузите файлы слева или напишите, что сделать с проектом.";
+    }
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.appendChild(buildBigBrand());
+    const sub = document.createElement("div");
+    sub.textContent = hint;
+    empty.appendChild(sub);
+    messagesEl.appendChild(empty);
+    return;
+  }
+  for (const m of visible) messagesEl.appendChild(buildMessage(m));
+  scrollBottom(false);
+}
+
+function scrollBottom(smooth = true) {
+  requestAnimationFrame(() => {
+    messagesEl.scrollTo({
+      top: messagesEl.scrollHeight,
+      behavior: smooth ? "smooth" : "auto",
+    });
+  });
+}
+
+function serializeBlocks() {
+  const out = [];
+  for (const b of state.blocks) {
+    if (!b) continue;
+    const item = { type: b.type, delay: b.delay || 0 };
+
+    if (b.type === "reasoning") {
+      item.text = (b.value || "").trim();
+      if (!item.text) continue;
+    } else if (b.type === "status") {
+      item.text = (b.value || "").trim();
+      item.ok = b.ok !== false;
+      if (!item.text) continue;
+    } else if (b.type === "browser") {
+      item.action = b.action || "goto";
+      item.text = (b.text || item.action).trim();
+      if (b.url) item.url = b.url;
+      if (b.selector) item.selector = b.selector;
+      if (b.value) item.value = b.value;
+      if (b.key) item.key = b.key;
+      if (b.dy !== undefined && b.dy !== null) item.dy = b.dy;
+      if (b.seconds !== undefined && b.seconds !== null) item.seconds = b.seconds;
+    } else if (b.type === "computer") {
+      item.action = b.action || "click";
+      item.text = (b.text || item.action).trim();
+      if (b.target) item.target = b.target;
+      if (b.value) item.value = b.value;
+      if (b.keys && b.keys.length) item.keys = b.keys;
+      for (const k of ["x","y","x1","y1","x2","y2","dy"]) {
+        if (b[k] !== undefined && b[k] !== null) item[k] = b[k];
+      }
+      if (b.seconds !== undefined && b.seconds !== null) item.seconds = b.seconds;
+    } else if (b.type === "image" || b.type === "video") {
+      if (!b.url) continue;
+      item.url = b.url;
+      item.filename = b.filename || "";
+    } else {
+      continue;
+    }
+    out.push(item);
+  }
+  return out;
+}
+
+function setSendMode(running) {
+  const btn = sendBtn;
+  btn.classList.toggle("stop", !!running);
+  btn.title = running ? "Остановить" : "Отправить";
+  btn.innerHTML = running
+    ? `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+         <rect x="2.5" y="2.5" width="9" height="9" rx="2"/>
+       </svg>`
+    : `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+             stroke="currentColor" stroke-width="1.9"
+             stroke-linecap="round" stroke-linejoin="round">
+         <path d="M8 13V3M3.5 7.5L8 3l4.5 4.5"/>
+       </svg>`;
+}
+
+/* Кнопка «стоп»: рвём текущий запрос и выходим из цикла агента */
+function stopAgent() {
+  if (!state.agentRunning) return;
+  state.stopped = true;
+  try { state.abort && state.abort.abort(); } catch (e) {}
+}
+
+function isAbort(e) {
+  return e && (e.name === "AbortError" || String(e.message || "").includes("aborted"));
+}
+
+async function send() {
+  if (state.agentRunning) { stopAgent(); return; }
+
+  const role = state.mode === "ai" ? "user" : state.role;
+  const content = inputEl.value.trim();
+  const blocks = role === "assistant" ? serializeBlocks() : [];
+  const attachments = role === "user" ? state.attachments.slice() : [];
+
+  if (!content && !blocks.length && !attachments.length) return;
+
+  if (!state.currentId) await newChat();
+
+  const body = {
+    role,
+    content,
+    model: role === "assistant" ? state.model : null,
+    blocks,
+    attachments,
+  };
+
+  let msg;
+  try {
+    msg = await api(`/api/chats/${state.currentId}/messages`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  } catch (e) { console.error(e); return; }
+
+  inputEl.value = "";
+  autoResize();
+  clearBlocks();
+  state.attachments = [];
+  renderAttachments();
+
+  messagesEl.querySelector(".empty")?.remove();
+
+  const el = buildMessage(msg, {});
+  messagesEl.appendChild(el);
+  scrollBottom();
+
+  if (role === "assistant") {
+    const hasBrowser = blocks.some(b => b.type === "browser");
+    const hasComputer = blocks.some(b => b.type === "computer");
+    const hasFile = blocks.some(b => b.type === "file");
+    if (hasBrowser || hasComputer || hasFile) {
+      el._blockCount = 0;
+      await appendBlocksToMessage(el, [], { runBrowser: true, runComputer: true, runFile: true });
+    }
+  }
+
+  try {
+    const chat = await api("/api/chats/" + state.currentId);
+    if (state.view === "chat") titleEl.textContent = sanitizeTitle(chat.title);
+  } catch (e) { /* ignore */ }
+  await loadChats();
+
+  if (state.mode === "ai" && role === "user") {
+    state.agentRunning = true;
+    state.stopped = false;
+    state.abort = new AbortController();
+    setSendMode(true);
+    try {
+      await runAgentCycle();
+    } finally {
+      state.agentRunning = false;
+      state.abort = null;
+      setSendMode(false);
+    }
+  }
+}
+
+async function runAgentCycle() {
+  const el = createAssistantShell({ id: "pending", model: state.model, blocks: [] });
+  el.dataset.mid = "pending";
+  setWorking(el, true);
+  messagesEl.appendChild(el);
+  scrollBottom();
+
+  let firstMsg;
+  try {
+    firstMsg = await api(`/api/chats/${state.currentId}/generate`, {
+      method: "POST",
+      body: JSON.stringify({ model: state.model }),
+    });
+  } catch (e) {
+    setWorking(el, false);
+    el.remove();
+    if (!isAbort(e)) renderError(e);
+    return;
+  }
+
+  el.dataset.mid = firstMsg.id;
+  setWorking(el, false);
+
+  await appendBlocksToMessage(el, firstMsg.blocks || [], {
+    runBrowser: true,
+    runProject: true,
+    runComputer: true,
+    runFile: true,
+  });
+
+  if (firstMsg.content) {
+    setMessageContent(el, firstMsg.content, { animateText: true });
+    scrollBottom();
+  }
+
+    let steps = 0;
+    let reasoningOnlyStreak = 0;
+    // Первый ответ считается завершённым, если в нём нет action-блоков
+    // И сервер явно не сказал, что мы в процессе. При первом ответе
+    // done обычно не выставляется — тогда смотрим просто на наличие
+    // action-блоков.
+    let done = !hasActionBlocks(firstMsg.blocks);
+    if (firstMsg.done === false) done = false;
+
+  while (!done && steps < MAX_AGENT_STEPS) {
+    if (state.stopped) break;
+    setWorking(el, true);
+    scrollBottom();
+
+    let resp;
+    try {
+      resp = await api(`/api/chats/${state.currentId}/generate/continue`, {
+        method: "POST",
+        body: JSON.stringify({ mid: firstMsg.id, model: state.model }),
+      });
+    } catch (e) {
+      setWorking(el, false);
+      if (!isAbort(e)) renderError(e);
+      break;
+    }
+
+    if (state.stopped) { setWorking(el, false); break; }
+
+    setWorking(el, false);
+
+    const blocks = (resp && resp.blocks) || [];
+    const hasAction = hasActionBlocks(blocks);
+    const hasContent = !!(resp && resp.content);
+
+    await appendBlocksToMessage(el, blocks, {
+      runBrowser: true,
+      runProject: true,
+      runComputer: true,
+      runFile: true,
+    });
+
+    if (hasContent) {
+      setMessageContent(el, resp.content, { animateText: true });
+      scrollBottom();
+    }
+
+    if (!resp || resp.done) {
+      done = true;
+      break;
+    }
+
+    if (!hasAction && !hasContent) {
+      reasoningOnlyStreak++;
+      if (reasoningOnlyStreak >= 3) {
+        console.warn("Model stuck on reasoning-only steps, stopping.");
+        break;
+      }
+    } else {
+      reasoningOnlyStreak = 0;
+    }
+
+    steps++;
+  }
+
+  setWorking(el, false);
+
+  if (state.stopped) {
+    // сигнал уже сработал — дальше дочитываем данные обычными запросами
+    state.abort = null;
+    const stopNote = makeStatus("Остановлено пользователем", false);
+    el._stepsEl.appendChild(stopNote);
+    scrollBottom();
+  }
+
+  try {
+    await loadChats();
+  } catch (e) { /* ignore */ }
+  if (state.view === "chat") {
+    try {
+      const chat = await api("/api/chats/" + state.currentId);
+      titleEl.textContent = sanitizeTitle(chat.title);
+    } catch (e) { /* ignore */ }
+  }
+  if (state.view === "project") {
+    try { await refreshProjectFiles(); } catch (e) { /* ignore */ }
+  }
+}
+
+function currentModelList() {
+  if (state.mode === "ai") {
+    return state.lmModels.length ? state.lmModels : ["LM Studio не отвечает"];
+  }
+  return MODELS;
+}
+
+async function loadLmModels() {
+  try {
+    const list = await api("/api/models");
+    state.lmModels = Array.isArray(list) ? list.filter(Boolean) : [];
+  } catch (e) {
+    state.lmModels = [];
+  }
+  syncModelWithMode();
+}
+
+/* Модель должна быть из текущего списка режима */
+function syncModelWithMode() {
+  const list = currentModelList();
+  if (!list.includes(state.model)) {
+    state.model = state.mode === "ai" ? (list[0] || "") : "Zimple-v2";
+  }
+  const nameEl = $("model-name");
+  if (nameEl) nameEl.textContent = state.model;
+  renderModelMenu();
+  updatePlaceholder();
+}
+
+function renderModelMenu() {
+  const menu = $("model-menu");
+  menu.innerHTML = "";
+  for (const m of currentModelList()) {
+    const item = document.createElement("div");
+    item.className = "menu-item" + (m === state.model ? " active" : "");
+    item.innerHTML = `<span>${m}</span>
+      <svg class="check" width="12" height="12" viewBox="0 0 12 12" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 6.5l2.8 2.8L10 3.5"/>
+      </svg>`;
+    item.onclick = () => {
+      state.model = m;
+      $("model-name").textContent = m;
+      renderModelMenu();
+      closeMenus();
+      updatePlaceholder();
+    };
+    menu.appendChild(item);
+  }
+}
+
+function updatePlaceholder() {
+  if (state.mode === "ai") {
+    inputEl.placeholder = state.view === "project"
+      ? "Что сделать с проектом?"
+      : "Написать сообщение (ответит ИИ)...";
+  } else if (state.role === "assistant") {
+    inputEl.placeholder = `Ручной ответ от ${state.model}...`;
+  } else {
+    inputEl.placeholder = "Написать сообщение...";
+  }
+}
+
+function closeMenus() {
+  document.querySelectorAll(".menu.open").forEach((m) => m.classList.remove("open"));
+  document.querySelectorAll(".pill.open, .icon-btn.open").forEach((b) => b.classList.remove("open"));
+}
+
+function bindMenu(btnId, menuId) {
+  const btn = $(btnId);
+  const menu = $(menuId);
+  if (!btn || !menu) return;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = menu.classList.contains("open");
+    closeMenus();
+    if (!isOpen) {
+      menu.classList.add("open");
+      btn.classList.add("open");
+    }
+  });
+  menu.addEventListener("click", (e) => e.stopPropagation());
+}
+
+function renderModeMenu() {
+  document.querySelectorAll(".mode-option").forEach((el) => {
+    el.classList.toggle("active", el.dataset.mode === state.mode);
+  });
+  const roleSection = document.querySelector(".role-section");
+  if (roleSection) roleSection.style.display = state.mode === "ai" ? "none" : "";
+}
+
+function bindModeMenu() {
+  document.querySelectorAll(".mode-option").forEach((el) => {
+    el.addEventListener("click", () => {
+      state.mode = el.dataset.mode;
+      if (state.mode === "ai") {
+        state.role = "user";
+        if (!state.lmModels.length) loadLmModels();
+      }
+      syncModelWithMode();
+      renderModeMenu();
+      renderRoleMenu();
+      updateStylerVisibility();
+      updatePlaceholder();
+      closeMenus();
+      inputEl.focus();
+    });
+  });
+}
+
+function renderRoleMenu() {
+  document.querySelectorAll(".role-option").forEach((el) => {
+    el.classList.toggle("active", el.dataset.role === state.role);
+  });
+}
+
+function bindRoleMenu() {
+  document.querySelectorAll(".role-option").forEach((el) => {
+    el.addEventListener("click", () => {
+      if (state.mode === "ai") return;
+      state.role = el.dataset.role;
+      renderRoleMenu();
+      updateStylerVisibility();
+      updatePlaceholder();
+      closeMenus();
+      inputEl.focus();
+    });
+  });
+}
+
+function clearBlocks() {
+  state.blocks = [];
+  renderBlocks();
+}
+
+function addBlock(type, extra = {}) {
+  const id = Math.random().toString(36).slice(2, 8);
+  const block = { id, type, value: "", ok: true, delay: 0, ...extra };
+  state.blocks.push(block);
+  renderBlocks();
+  requestAnimationFrame(() => {
+    const el = document.querySelector(
+      `.block[data-id="${id}"] input[type="text"], .block[data-id="${id}"] input[type="url"], .block[data-id="${id}"] textarea`
+    );
+    el?.focus();
+    const container = $("blocks");
+    container.scrollTop = container.scrollHeight;
+  });
+}
+
+function addPresetStatus(text) {
+  const id = Math.random().toString(36).slice(2, 8);
+  state.blocks.push({ id, type: "status", value: text, ok: true, delay: 0 });
+  renderBlocks();
+}
+
+function removeBlock(id) {
+  state.blocks = state.blocks.filter(b => b.id !== id);
+  renderBlocks();
+}
+
+function makeDelayWrap(block) {
+  const wrap = document.createElement("div");
+  wrap.className = "delay-wrap";
+  const inp = document.createElement("input");
+  inp.type = "number";
+  inp.min = "0";
+  inp.step = "0.1";
+  inp.value = block.delay ?? 0;
+  inp.title = "Задержка перед появлением этого блока, сек.";
+  inp.oninput = () => {
+    const v = parseFloat(inp.value);
+    block.delay = isFinite(v) && v > 0 ? v : 0;
+  };
+  const unit = document.createElement("span");
+  unit.textContent = "с";
+  wrap.appendChild(inp);
+  wrap.appendChild(unit);
+  return wrap;
+}
+
+function renderBlocks() {
+  const container = $("blocks");
+  container.innerHTML = "";
+  for (const b of state.blocks) {
+    const row = document.createElement("div");
+    row.className = "block " + b.type;
+    row.dataset.id = b.id;
+
+    if (b.type === "status") {
+      const tog = document.createElement("button");
+      tog.type = "button";
+      tog.className = "status-toggle " + (b.ok ? "ok" : "fail");
+      tog.innerHTML = b.ok ? SVG_CHECK : SVG_CROSS;
+      tog.title = b.ok ? "Успешно" : "Провал";
+      tog.onclick = (e) => {
+        e.preventDefault();
+        b.ok = !b.ok;
+        tog.className = "status-toggle " + (b.ok ? "ok" : "fail");
+        tog.innerHTML = b.ok ? SVG_CHECK : SVG_CROSS;
+      };
+      row.appendChild(tog);
+      const inp = document.createElement("input");
+      inp.type = "text";
+      inp.placeholder = "Статус, напр. «Написал код»";
+      inp.value = b.value;
+      inp.oninput = () => { b.value = inp.value; };
+      inp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); addBlock("status"); }
+      });
+      row.appendChild(inp);
+
+    } else if (b.type === "reasoning") {
+      const ta = document.createElement("textarea");
+      ta.rows = 2;
+      ta.placeholder = "Reasoning — размышления модели...";
+      ta.value = b.value;
+      ta.oninput = () => {
+        b.value = ta.value;
+        ta.style.height = "auto";
+        ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+      };
+      requestAnimationFrame(() => {
+        ta.style.height = "auto";
+        ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+      });
+      row.appendChild(ta);
+
+    } else if (b.type === "image" || b.type === "video") {
+      const thumb = document.createElement("div");
+      thumb.className = "media-thumb";
+      if (b.type === "image") {
+        const img = document.createElement("img");
+        img.src = b.url;
+        thumb.appendChild(img);
+      } else {
+        const v = document.createElement("video");
+        v.src = b.url;
+        v.muted = true;
+        v.preload = "metadata";
+        thumb.appendChild(v);
+      }
+      row.appendChild(thumb);
+      const info = document.createElement("div");
+      info.className = "media-info";
+      const name = document.createElement("div");
+      name.className = "media-name";
+      name.textContent = b.filename || (b.type === "image" ? "Изображение" : "Видео");
+      const kind = document.createElement("div");
+      kind.className = "media-kind";
+      kind.textContent = b.type === "image" ? "Изображение" : "Видео";
+      info.appendChild(name);
+      info.appendChild(kind);
+      row.appendChild(info);
+
+    } else if (b.type === "browser") {
+      const select = document.createElement("select");
+      for (const a of BROWSER_ACTIONS) {
+        const opt = document.createElement("option");
+        opt.value = a;
+        opt.textContent = a;
+        if ((b.action || "goto") === a) opt.selected = true;
+        select.appendChild(opt);
+      }
+      select.onchange = () => { b.action = select.value; renderBlocks(); };
+
+      const textInp = document.createElement("input");
+      textInp.type = "text";
+      textInp.placeholder = "Описание, напр. «Открываю Google»";
+      textInp.value = b.text || "";
+      textInp.oninput = () => { b.text = textInp.value; };
+
+      const row1 = document.createElement("div");
+      row1.className = "browser-row";
+      row1.appendChild(select);
+      row1.appendChild(textInp);
+      row.appendChild(row1);
+
+      const extras = document.createElement("div");
+      extras.className = "browser-row";
+      const act = b.action || "goto";
+      if (act === "goto") {
+        const urlInp = document.createElement("input");
+        urlInp.type = "url";
+        urlInp.placeholder = "https://example.com";
+        urlInp.value = b.url || "";
+        urlInp.oninput = () => { b.url = urlInp.value; };
+        extras.appendChild(urlInp);
+      } else if (act === "click") {
+        const selInp = document.createElement("input");
+        selInp.type = "text";
+        selInp.placeholder = "CSS-селектор, напр. button.submit";
+        selInp.value = b.selector || "";
+        selInp.oninput = () => { b.selector = selInp.value; };
+        extras.appendChild(selInp);
+      } else if (act === "type") {
+        const selInp = document.createElement("input");
+        selInp.type = "text";
+        selInp.placeholder = "Селектор, напр. input[name=q]";
+        selInp.value = b.selector || "";
+        selInp.oninput = () => { b.selector = selInp.value; };
+        extras.appendChild(selInp);
+        const valInp = document.createElement("input");
+        valInp.type = "text";
+        valInp.placeholder = "Текст для ввода";
+        valInp.value = b.value || "";
+        valInp.oninput = () => { b.value = valInp.value; };
+        extras.appendChild(valInp);
+      } else if (act === "press") {
+        const keyInp = document.createElement("input");
+        keyInp.type = "text";
+        keyInp.placeholder = "Клавиша, напр. Enter";
+        keyInp.value = b.key || "Enter";
+        keyInp.oninput = () => { b.key = keyInp.value; };
+        extras.appendChild(keyInp);
+      } else if (act === "scroll") {
+        const dyInp = document.createElement("input");
+        dyInp.type = "number";
+        dyInp.placeholder = "Пиксели, напр. 600";
+        dyInp.value = b.dy ?? 600;
+        dyInp.oninput = () => { b.dy = parseInt(dyInp.value) || 600; };
+        extras.appendChild(dyInp);
+      } else if (act === "wait") {
+        const secInp = document.createElement("input");
+        secInp.type = "number";
+        secInp.step = "0.1";
+        secInp.placeholder = "Секунды";
+        secInp.value = b.seconds ?? 2;
+        secInp.oninput = () => { b.seconds = parseFloat(secInp.value) || 0; };
+        extras.appendChild(secInp);
+      }
+      if (extras.children.length) row.appendChild(extras);
+
+    } else if (b.type === "computer") {
+      const select = document.createElement("select");
+      for (const a of COMPUTER_ACTIONS) {
+        const opt = document.createElement("option");
+        opt.value = a;
+        opt.textContent = a;
+        if ((b.action || "click") === a) opt.selected = true;
+        select.appendChild(opt);
+      }
+      select.onchange = () => { b.action = select.value; renderBlocks(); };
+
+      const textInp = document.createElement("input");
+      textInp.type = "text";
+      textInp.placeholder = "Описание, напр. «Кликаю по кнопке»";
+      textInp.value = b.text || "";
+      textInp.oninput = () => { b.text = textInp.value; };
+
+      const row1 = document.createElement("div");
+      row1.className = "browser-row";
+      row1.appendChild(select);
+      row1.appendChild(textInp);
+      row.appendChild(row1);
+
+      const extras = document.createElement("div");
+      extras.className = "browser-row";
+      const act = b.action || "click";
+
+      const addNum = (key, placeholder) => {
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.placeholder = placeholder;
+        inp.value = b[key] ?? "";
+        inp.style.maxWidth = "80px";
+        inp.oninput = () => {
+          const v = inp.value.trim();
+          b[key] = v === "" ? null : parseInt(v);
+        };
+        extras.appendChild(inp);
+      };
+
+      if (act === "click" || act === "double_click") {
+        const tInp = document.createElement("input");
+        tInp.type = "text";
+        tInp.placeholder = "ID элемента (el_N)";
+        tInp.value = b.target || "";
+        tInp.oninput = () => { b.target = tInp.value; };
+        extras.appendChild(tInp);
+        addNum("x", "x");
+        addNum("y", "y");
+      } else if (act === "right_click") {
+        addNum("x", "x");
+        addNum("y", "y");
+      } else if (act === "type") {
+        const vInp = document.createElement("input");
+        vInp.type = "text";
+        vInp.placeholder = "Текст для ввода (поддерживает юникод)";
+        vInp.value = b.value || "";
+        vInp.oninput = () => { b.value = vInp.value; };
+        extras.appendChild(vInp);
+      } else if (act === "key") {
+        const kInp = document.createElement("input");
+        kInp.type = "text";
+        kInp.placeholder = "ctrl,s  или  alt,tab";
+        const cur = Array.isArray(b.keys) ? b.keys.join(",") : (b.keys || "");
+        kInp.value = cur;
+        kInp.oninput = () => {
+          b.keys = kInp.value.split(",").map(s => s.trim()).filter(Boolean);
+        };
+        extras.appendChild(kInp);
+      } else if (act === "scroll") {
+        addNum("dy", "Пиксели");
+      } else if (act === "move") {
+        addNum("x", "x");
+        addNum("y", "y");
+      } else if (act === "drag") {
+        addNum("x1", "x1");
+        addNum("y1", "y1");
+        addNum("x2", "x2");
+        addNum("y2", "y2");
+      } else if (act === "wait") {
+        const secInp = document.createElement("input");
+        secInp.type = "number";
+        secInp.step = "0.1";
+        secInp.placeholder = "Секунды";
+        secInp.value = b.seconds ?? 2;
+        secInp.style.maxWidth = "90px";
+        secInp.oninput = () => { b.seconds = parseFloat(secInp.value) || 0; };
+        extras.appendChild(secInp);
+      }
+      if (extras.children.length) row.appendChild(extras);
+    }
+
+    row.appendChild(makeDelayWrap(b));
+    const rm = document.createElement("button");
+    rm.className = "remove";
+    rm.innerHTML = "&times;";
+    rm.title = "Удалить";
+    rm.onclick = () => removeBlock(b.id);
+    row.appendChild(rm);
+    container.appendChild(row);
+  }
+}
+
+function updateStylerVisibility() {
+  const show = state.mode === "manual" && state.role === "assistant";
+  $("styler-row").classList.toggle("hidden", !show);
+  if (!show) clearBlocks();
+}
+
+function renderAttachments() {
+  const row = $("attachments-row");
+  row.innerHTML = "";
+  state.attachments.forEach((a, i) => {
+    const el = document.createElement("div");
+    el.className = "attachment-thumb";
+    if (a.type === "image") {
+      const img = document.createElement("img");
+      img.src = a.url;
+      el.appendChild(img);
+    } else {
+      const v = document.createElement("video");
+      v.src = a.url;
+      v.muted = true;
+      v.preload = "metadata";
+      v.playsInline = true;
+      el.appendChild(v);
+    }
+    const rm = document.createElement("button");
+    rm.className = "remove-mini";
+    rm.innerHTML = "&times;";
+    rm.title = "Удалить";
+    rm.onclick = () => {
+      state.attachments.splice(i, 1);
+      renderAttachments();
+    };
+    el.appendChild(rm);
+    row.appendChild(el);
+  });
+}
+
+/* ---------- Computer toggle ---------- */
+function updatePcIndicator(on) {
+  const dot = $("pc-dot");
+  const st = $("pc-state");
+  if (dot) dot.classList.toggle("on", !!on);
+  if (st) {
+    st.textContent = on ? "ПК включён" : "выкл";
+    st.classList.toggle("on", !!on);
+  }
+}
+
+async function refreshComputerStatus() {
+  try {
+    const st = await api("/api/computer/status");
+    state.computerEnabled = !!st.enabled;
+    updatePcIndicator(st.enabled);
+  } catch (e) { /* ignore */ }
+}
+
+async function setComputerEnabled(enabled) {
+  try {
+    const res = await api("/api/computer/toggle", {
+      method: "POST",
+      body: JSON.stringify({ enabled }),
+    });
+    state.computerEnabled = !!res.enabled;
+    updatePcIndicator(state.computerEnabled);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function ensureComputerEnabled() {
+  try {
+    const st = await api("/api/computer/status");
+    if (!st.available) {
+      alert("Управление ПК недоступно.\n\nУстанови на сервере:\n" +
+            "pip install mss pyautogui uiautomation pyperclip");
+      return false;
+    }
+    if (!st.enabled) {
+      const ok = confirm(
+        "Разрешить ИИ управлять рабочим столом?\n\n" +
+        "ИИ сможет кликать мышью, печатать текст и нажимать клавиши " +
+        "на этом компьютере. Отключить можно в меню чата."
+      );
+      if (!ok) return false;
+      await setComputerEnabled(true);
+    }
+    return true;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+}
+
+
+/* ---------- Голосовой ввод (Web Speech API) ---------- */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+let _rec = null;
+let _recBase = "";
+let _recFinal = "";
+
+function voiceSupported() { return !!SpeechRec; }
+
+function showVoiceHint(text) {
+  let hint = $("voice-hint");
+  if (!text) { hint?.remove(); return; }
+  if (!hint) {
+    hint = document.createElement("div");
+    hint.className = "voice-hint";
+    hint.id = "voice-hint";
+    inputEl.closest(".input-row").before(hint);
+  }
+  hint.textContent = text;
+}
+
+function startVoice() {
+  if (!voiceSupported() || state.listening) return;
+  try {
+    _rec = new SpeechRec();
+  } catch (e) { console.warn(e); return; }
+
+  _rec.lang = "ru-RU";
+  _rec.continuous = true;
+  _rec.interimResults = true;
+
+  _recBase = inputEl.value.trim();
+  _recFinal = "";
+
+  _rec.onresult = (e) => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const tr = e.results[i][0].transcript;
+      if (e.results[i].isFinal) _recFinal += tr;
+      else interim += tr;
+    }
+    const merged = [_recBase, (_recFinal + interim).trim()].filter(Boolean).join(" ");
+    inputEl.value = merged;
+    autoResize();
+  };
+  _rec.onerror = (e) => {
+    console.warn("speech error:", e.error);
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+      showVoiceHint("Нет доступа к микрофону");
+      setTimeout(() => showVoiceHint(""), 2500);
+    }
+    stopVoice();
+  };
+  _rec.onend = () => {
+    if (state.listening) stopVoice();
+  };
+
+  try {
+    _rec.start();
+    state.listening = true;
+    $("mic-btn")?.classList.add("listening");
+    showVoiceHint("Говорите…");
+  } catch (e) { console.warn(e); }
+}
+
+function stopVoice() {
+  state.listening = false;
+  $("mic-btn")?.classList.remove("listening");
+  showVoiceHint("");
+  try { _rec && _rec.stop(); } catch (e) {}
+  _rec = null;
+  inputEl.focus();
+}
+
+function bindVoice() {
+  const btn = $("mic-btn");
+  if (!btn) return;
+  if (!voiceSupported()) {
+    btn.classList.add("unsupported");
+    btn.title = "Голосовой ввод не поддерживается этим браузером";
+    btn.addEventListener("click", () => {
+      showVoiceHint("Голосовой ввод работает в Chrome/Edge");
+      setTimeout(() => showVoiceHint(""), 2500);
+    });
+    return;
+  }
+  // удерживать — говорить, отпустить — текст в поле
+  const down = (e) => { e.preventDefault(); startVoice(); };
+  const up = (e) => { e.preventDefault(); stopVoice(); };
+  btn.addEventListener("mousedown", down);
+  btn.addEventListener("touchstart", down, { passive: false });
+  document.addEventListener("mouseup", () => { if (state.listening) stopVoice(); });
+  btn.addEventListener("touchend", up);
+  btn.addEventListener("touchcancel", up);
+  btn.addEventListener("contextmenu", (e) => e.preventDefault());
+}
+
+/* ---------- Память ИИ ---------- */
+function openMemoryModal() {
+  const modal = $("memory-modal");
+  if (!modal) return;
+  modal.hidden = false;
+  requestAnimationFrame(() => modal.classList.add("open"));
+  const ta = $("memory-text");
+  ta.value = "Загрузка...";
+  api("/api/memory").then((data) => {
+    ta.value = data.text || "";
+    $("memory-path").textContent = data.path || "";
+    ta.focus();
+  }).catch((e) => { ta.value = ""; console.error(e); });
+}
+
+function closeMemoryModal() {
+  const modal = $("memory-modal");
+  if (!modal) return;
+  modal.classList.remove("open");
+  setTimeout(() => { modal.hidden = true; }, 220);
+}
+
+async function saveMemory(text) {
+  try {
+    await api("/api/memory", {
+      method: "POST",
+      body: JSON.stringify({ action: "replace", text }),
+    });
+  } catch (e) { console.error(e); }
+}
+
+function bindMemoryModal() {
+  $("memory-btn")?.addEventListener("click", () => { closeMenus(); openMemoryModal(); });
+  $("memory-close")?.addEventListener("click", closeMemoryModal);
+  $("memory-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "memory-modal") closeMemoryModal();
+  });
+  $("memory-save")?.addEventListener("click", async () => {
+    await saveMemory($("memory-text").value);
+    closeMemoryModal();
+  });
+  $("memory-clear")?.addEventListener("click", async () => {
+    if (!confirm("Очистить память ИИ полностью?")) return;
+    $("memory-text").value = "";
+    await saveMemory("");
+    closeMemoryModal();
+  });
+}
+
+/* ---------- Init ---------- */
+async function init() {
+  animateBrand();
+  await initDevice();
+  bindVoice();
+  bindMemoryModal();
+  setSendMode(false);
+  renderModelMenu();
+  renderModeMenu();
+  renderRoleMenu();
+  bindMenu("model-btn", "model-menu");
+  bindMenu("tools-btn", "tools-menu");
+  bindMenu("chat-menu-btn", "chat-menu");
+  bindModeMenu();
+  bindRoleMenu();
+
+  const sidebar = $("sidebar");
+  const overlay = $("sidebar-overlay");
+  const ham = $("hamburger-btn");
+  if (ham) ham.addEventListener("click", () => setSidebar(!sidebar.classList.contains("open")));
+  if (overlay) overlay.addEventListener("click", () => setSidebar(false));
+
+  window.addEventListener("resize", () => {
+    if (!isMobile()) {
+      setSidebar(false);
+      $("project-side").classList.remove("mobile-open");
+    } else {
+      $("project-toggle-btn").hidden = state.view !== "project";
+    }
+  });
+
+  $("project-toggle-btn").addEventListener("click", () => {
+    const ps = $("project-side");
+    ps.classList.toggle("mobile-open");
+  });
+
+  const projSide = $("project-side");
+  ["dragenter", "dragover"].forEach(ev => {
+    projSide.addEventListener(ev, (e) => {
+      e.preventDefault();
+      projSide.classList.add("dragover");
+    });
+  });
+  ["dragleave", "drop"].forEach(ev => {
+    projSide.addEventListener(ev, (e) => {
+      e.preventDefault();
+      projSide.classList.remove("dragover");
+    });
+  });
+  projSide.addEventListener("drop", async (e) => {
+    const dt = e.dataTransfer;
+    if (!dt || !dt.files || !dt.files.length) return;
+    await uploadProjectFiles(dt.files);
+  });
+
+  $("project-upload-btn").addEventListener("click", () => {
+    const inp = $("project-upload-input");
+    inp.value = "";
+    inp.click();
+  });
+  $("project-upload-input").addEventListener("change", async (e) => {
+    const files = e.target.files;
+    e.target.value = "";
+    if (!files || !files.length) return;
+    await uploadProjectFiles(files);
+  });
+
+  $("section-add-btn").addEventListener("click", newProject);
+
+  $("add-reasoning").addEventListener("click", () => addBlock("reasoning"));
+  $("add-status").addEventListener("click", () => addBlock("status"));
+  $("add-status-image").addEventListener("click", () => addPresetStatus("Генерация изображения"));
+  $("add-status-video").addEventListener("click", () => addPresetStatus("Генерация видео"));
+  $("add-browser").addEventListener("click", () => addBlock("browser", {
+    action: "goto",
+    text: "Открываю сайт",
+    url: "https://example.com",
+    delay: 2,
+  }));
+
+  $("add-computer").addEventListener("click", async () => {
+    const ok = await ensureComputerEnabled();
+    if (!ok) return;
+    addBlock("computer", {
+      action: "click",
+      text: "Кликаю",
+      delay: 1,
+    });
+  });
+
+  $("add-image").addEventListener("click", () => {
+    const inp = $("ai-media-input");
+    inp.accept = "image/*";
+    inp.dataset.kind = "image";
+    inp.value = "";
+    inp.click();
+  });
+  $("add-video").addEventListener("click", () => {
+    const inp = $("ai-media-input");
+    inp.accept = "video/*";
+    inp.dataset.kind = "video";
+    inp.value = "";
+    inp.click();
+  });
+
+  $("attach-btn").addEventListener("click", () => {
+    const inp = $("user-attach-input");
+    inp.value = "";
+    inp.click();
+  });
+  $("user-attach-input").addEventListener("change", async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    for (const f of files) {
+      try {
+        const info = await uploadFile(f);
+        if (info.kind !== "image" && info.kind !== "video") continue;
+        state.attachments.push({
+          type: info.kind,
+          url: info.url,
+          filename: info.filename,
+        });
+      } catch (err) { console.error(err); }
+    }
+    renderAttachments();
+  });
+
+  $("ai-media-input").addEventListener("change", async (e) => {
+    const file = (e.target.files || [])[0];
+    const kind = e.target.dataset.kind || "image";
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const info = await uploadFile(file);
+      addBlock(kind, { url: info.url, filename: info.filename, value: "" });
+    } catch (err) { console.error(err); }
+  });
+
+  $("new-chat").addEventListener("click", newChat);
+  $("projects-btn").addEventListener("click", async () => {
+    state.listMode = "projects";
+    updateSectionUI();
+    await loadProjects();
+    renderList();
+  });
+
+  $("close-browser-btn").addEventListener("click", async () => {
+    closeMenus();
+    try {
+      await api("/api/browser/close", { method: "POST", body: "{}" });
+    } catch (e) { console.error(e); }
+  });
+
+  $("toggle-computer-btn").addEventListener("click", async () => {
+    closeMenus();
+    if (state.computerEnabled) {
+      await setComputerEnabled(false);
+    } else {
+      await ensureComputerEnabled();
+    }
+  });
+
+  sendBtn.addEventListener("click", send);
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !isMobile()) {
+      e.preventDefault();
+      send();
+    }
+  });
+  inputEl.addEventListener("input", autoResize);
+
+  document.addEventListener("click", () => { closeMenus(); closeCtxMenu(); });
+  window.addEventListener("resize", closeCtxMenu);
+  chatListEl.addEventListener("scroll", closeCtxMenu);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeMenus();
+      closeCtxMenu();
+      if (!$("memory-modal").hidden) closeMemoryModal();
+      if (state.listening) stopVoice();
+      if (isMobile()) setSidebar(false);
+    }
+  });
+
+  // Initial
+  state.listMode = "chats";
+  updateSectionUI();
+  await refreshComputerStatus();
+  await loadLabels();
+  await loadLmModels();
+  await loadChats();
+  renderList();
+  if (state.chats.length) {
+    await openChat(state.chats[0].id);
+  } else {
+    await newChat();
+  }
+  updatePlaceholder();
+  if (!isMobile()) inputEl.focus();
+}
+
+init().catch(console.error);
+</script>
+</body>
+</html>
